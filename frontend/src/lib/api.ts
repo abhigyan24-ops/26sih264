@@ -33,7 +33,20 @@ export const login = async (username: string, password: string) => {
   return data as { access_token: string; token_type: string }
 }
 
-export const me = async () => {
+export const logout = () => {
+  localStorage.removeItem('token')
+  localStorage.removeItem('user')
+  window.location.href = '/login'
+}
+
+export const me = async (): Promise<{
+  id: number
+  username: string
+  full_name: string
+  role: string
+  bureau_id: number | null
+  region: string | null
+}> => {
   const { data } = await api.get('/auth/me')
   return data
 }
