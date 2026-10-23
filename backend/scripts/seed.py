@@ -338,7 +338,7 @@ def main() -> None:
                     {"c": cid, "b": bid, "o": officer, "t": closed},
                 )
 
-    print(f"✓ Seeded {len(insts)} institutions and {len(rows)} cases.")
+    print(f"[OK] Seeded {len(insts)} institutions and {len(rows)} cases.")
     print("  Run: python -m ml.train_overlap")
 
 

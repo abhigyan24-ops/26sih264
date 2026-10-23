@@ -18,6 +18,7 @@ It is never used as a model feature.
 import datetime
 import itertools
 import json
+import warnings
 from collections import defaultdict
 
 import joblib
@@ -84,6 +85,7 @@ def load_pairs():
 
 
 def main():
+    warnings.filterwarnings("ignore", category=UserWarning, module="sklearn")
     X, y, g = load_pairs()
     n_pos = int(y.sum())
     print(f"Pairs: {len(y)} total | {n_pos} positive ({y.mean():.1%})")
