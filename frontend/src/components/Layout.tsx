@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
-  LayoutDashboard, FileText, Link2, Bell, Building2,
-  Settings, LogOut, ChevronRight, Menu, X, Shield
+  LayoutDashboard, FileText, Link2, Bell,
+  Settings, LogOut, ChevronRight, Menu, X, Shield, Search
 } from 'lucide-react'
-import { getAlerts } from '../lib/api'
+import { getAlerts, searchInstitutions, getPolicy } from '../lib/api'
 
 const NAV = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard', exact: true },
@@ -18,6 +18,8 @@ const NAV = [
 export default function Layout() {
   const navigate = useNavigate()
   const [open, setOpen] = useState(true)
+  const [searchModalOpen, setSearchModalOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
   const user = JSON.parse(localStorage.getItem('user') || '{}')
 
   const { data: alerts = [] } = useQuery({
@@ -26,6 +28,30 @@ export default function Layout() {
     refetchInterval: 30_000,
   })
   const unread = (alerts as any[]).length
+
+  const { data: policyData } = useQuery({ queryKey: ['policy'], queryFn: getPolicy })
+  const globalMode = (policyData?.settings || []).find((s: any) => s.scope === 'global')?.value || 'offline'
+
+  const { data: searchResults = [] } = useQuery({
+    queryKey: ['global-search', searchQuery],
+    queryFn: () => searchInstitutions(searchQuery),
+    enabled: searchQuery.trim().length >= 2,
+  })
+
+  // Keyboard shortcut Ctrl+K / Cmd+K
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        setSearchModalOpen(prev => !prev)
+      }
+      if (e.key === 'Escape') {
+        setSearchModalOpen(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   const logout = () => {
     localStorage.removeItem('token')
@@ -106,10 +132,98 @@ export default function Layout() {
         </div>
       </aside>
 
-      {/* Main */}
-      <main className="flex-1 overflow-y-auto">
-        <Outlet />
-      </main>
+      {/* Main Container */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Top Navbar */}
+        <header className="h-14 border-b border-slate-800/60 bg-surface-secondary/40 backdrop-blur-md px-6 flex items-center justify-between shrink-0">
+          <button
+            onClick={() => setSearchModalOpen(true)}
+            className="flex items-center gap-3 px-3 py-1.5 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700 transition-all text-xs w-72"
+          >
+            <Search size={14} className="text-slate-500" />
+            <span>Search institutions or cases...</span>
+            <kbd className="ml-auto text-[10px] bg-slate-800 border border-slate-700 px-1.5 py-0.5 rounded text-slate-400">Ctrl K</kbd>
+          </button>
+
+          <div className="flex items-center gap-3">
+            <span className={`text-[11px] px-2.5 py-1 rounded-full border flex items-center gap-1.5 font-medium ${
+              globalMode === 'online'
+                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                : 'bg-slate-800 text-slate-400 border-slate-700'
+            }`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${globalMode === 'online' ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
+              {globalMode === 'online' ? 'Cloud Connected' : 'Offline Mode (Zero Egress)'}
+            </span>
+          </div>
+        </header>
+
+        {/* Content */}
+        <main className="flex-1 overflow-y-auto">
+          <Outlet />
+        </main>
+      </div>
+
+      {/* Quick Search Modal */}
+      {searchModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
+          <div className="card w-full max-w-xl overflow-hidden border border-slate-700 shadow-2xl animate-scale-up">
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-800">
+              <Search size={18} className="text-slate-500" />
+              <input
+                autoFocus
+                className="bg-transparent border-0 outline-none text-slate-100 text-sm flex-1 placeholder:text-slate-500"
+                placeholder="Type institution name, city, or AICTE ID..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+              />
+              <button
+                onClick={() => setSearchModalOpen(false)}
+                className="text-slate-500 hover:text-slate-300 text-xs px-1.5 py-0.5 border border-slate-700 rounded"
+              >
+                ESC
+              </button>
+            </div>
+
+            <div className="max-h-80 overflow-y-auto p-2">
+              {searchQuery.trim().length < 2 ? (
+                <div className="p-6 text-center text-xs text-slate-500">
+                  Type at least 2 characters to search institutions across AICTE bureaus.
+                </div>
+              ) : searchResults.length === 0 ? (
+                <div className="p-6 text-center text-xs text-slate-500">
+                  No matching institutions found for &ldquo;{searchQuery}&rdquo;.
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {searchResults.map((inst: any) => (
+                    <div
+                      key={inst.id}
+                      onClick={() => {
+                        navigate(`/institutions/${inst.id}`)
+                        setSearchModalOpen(false)
+                        setSearchQuery('')
+                      }}
+                      className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-800/80 cursor-pointer transition-colors group"
+                    >
+                      <div className="min-w-0 pr-3">
+                        <div className="text-sm font-medium text-slate-200 group-hover:text-blue-400 transition-colors truncate">
+                          {inst.name}
+                        </div>
+                        <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-2">
+                          <span className="font-mono text-blue-400/80">{inst.aicte_permanent_id}</span>
+                          <span>&bull;</span>
+                          <span>{inst.city || 'N/A'}, {inst.region}</span>
+                        </div>
+                      </div>
+                      <ChevronRight size={16} className="text-slate-600 group-hover:text-slate-300 transition-colors shrink-0" />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

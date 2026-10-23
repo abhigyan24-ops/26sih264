@@ -115,3 +115,32 @@ export const getParameterRegistry = async () => {
   const { data } = await api.get('/parameter-registry')
   return data as any[]
 }
+
+export const createCase = async (caseData: {
+  aicte_id?: string
+  institution_name?: string
+  city?: string
+  category: string
+  description: string
+  bureau_code: string
+  sensitive?: boolean
+  priority?: string
+}) => {
+  const { data } = await api.post('/cases', caseData)
+  return data
+}
+
+export const addCaseAction = async (caseId: number, actionData: {
+  action_type: string
+  remarks?: string
+  to_bureau?: string
+  new_status?: string
+}) => {
+  const { data } = await api.post(`/cases/${caseId}/actions`, actionData)
+  return data
+}
+
+export const getEvaluationReport = async () => {
+  const { data } = await api.get('/evaluation-report')
+  return data
+}

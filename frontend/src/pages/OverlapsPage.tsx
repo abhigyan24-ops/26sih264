@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { Filter, Loader2, ChevronRight } from 'lucide-react'
+import { Loader2, ChevronRight } from 'lucide-react'
 import { getOverlaps, decideOverlap } from '../lib/api'
 
-function FeatureBar({ label, value, contribution }: { label: string; value: number; contribution: number }) {
+function FeatureBar({ label, contribution }: { label: string; value?: number; contribution: number }) {
   const pct = Math.min(100, Math.abs(contribution) * 200)
   const pos = contribution >= 0
   return (

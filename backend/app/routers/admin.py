@@ -95,3 +95,14 @@ def model_versions(db=Depends(get_db), user=Depends(current_user)):
         text("SELECT * FROM model_versions ORDER BY created_at DESC")
     ).mappings().all()
     return [dict(r) for r in rows]
+
+
+@router.get("/evaluation-report")
+def evaluation_report(user=Depends(current_user)):
+    import json
+    from pathlib import Path
+    p = Path(__file__).resolve().parent.parent.parent / "ml" / "artifacts" / "evaluation_report.json"
+    if not p.exists():
+        raise HTTPException(404, "Evaluation report not generated yet")
+    with open(p) as f:
+        return json.load(f)

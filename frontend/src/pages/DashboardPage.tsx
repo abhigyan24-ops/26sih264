@@ -1,8 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend
+  PieChart, Pie, Cell
 } from 'recharts'
 import {
   FileText, Clock, AlertTriangle, CheckCircle,
@@ -115,8 +114,8 @@ export default function DashboardPage() {
                 cx="50%" cy="50%"
                 outerRadius={70}
                 paddingAngle={3}
-                label={({ region, percent }) =>
-                  percent > 0.05 ? `${region} ${(percent * 100).toFixed(0)}%` : ''
+                label={(entry: any) =>
+                  (entry.percent ?? 0) > 0.05 ? `${entry.region || entry.name || ''} ${((entry.percent ?? 0) * 100).toFixed(0)}%` : ''
                 }
                 labelLine={false}
               >
