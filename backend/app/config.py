@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     # Dimension must match vector(384) in schema.sql.
     embed_model: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
     embed_dim: int = 384
+    fastembed_cache_dir: str = "./.cache/fastembed"
 
 
 settings = Settings()

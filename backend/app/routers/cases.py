@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+import json
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
@@ -112,9 +113,12 @@ def list_cases(
 
 @router.get("/{case_id}")
 def case_detail(case_id: int, db=Depends(get_db), user=Depends(current_user)):
+    sc, sp = scope_clause(user)
+    p = {"i": case_id}
+    p.update(sp)
     c = db.execute(
         text(
-            """
+            f"""
             SELECT c.id, c.case_ref, c.category, c.status, c.received_date,
                    c.sla_due_date, c.closed_date, c.priority, c.sensitivity_flag,
                    c.hold_parallel, c.next_action, c.inst_match_conf, c.updated_at,
@@ -126,10 +130,10 @@ def case_detail(case_id: int, db=Depends(get_db), user=Depends(current_user)):
             JOIN institutions i ON i.id=c.institution_id
             JOIN bureaus b ON b.id=c.bureau_id
             LEFT JOIN officers o ON o.id=c.officer_id
-            WHERE c.id=:i
+            WHERE c.id=:i {sc}
             """
         ),
-        {"i": case_id},
+        p,
     ).mappings().first()
 
     if not c:
@@ -204,6 +208,22 @@ class CaseIn(BaseModel):
 
 @router.post("", status_code=201)
 def create_case(body: CaseIn, db=Depends(get_db), user=Depends(current_user)):
+    if not body.description or not body.description.strip():
+        raise HTTPException(422, "Description cannot be empty or whitespace only")
+
+    bureau_id = db.execute(
+        text("SELECT id FROM bureaus WHERE code=:c"), {"c": body.bureau_code}
+    ).scalar()
+    if not bureau_id:
+        raise HTTPException(422, f"Unknown bureau code: {body.bureau_code}")
+
+    sla_days = db.execute(
+        text("SELECT deadline_days FROM sla_rules WHERE category=:c"),
+        {"c": body.category},
+    ).scalar()
+    if sla_days is None:
+        raise HTTPException(422, f"Unknown category: {body.category}")
+
     inst_id, conf, needs_review = resolve_institution(
         db, body.aicte_id, body.institution_name, body.city
     )
@@ -213,20 +233,6 @@ def create_case(body: CaseIn, db=Depends(get_db), user=Depends(current_user)):
             f"Institution could not be resolved (best score: {conf:.2f}). "
             "Provide the AICTE Permanent ID or pick from the search list.",
         )
-
-    bureau_id = db.execute(
-        text("SELECT id FROM bureaus WHERE code=:c"), {"c": body.bureau_code}
-    ).scalar()
-    if not bureau_id:
-        raise HTTPException(422, f"Unknown bureau code: {body.bureau_code}")
-
-    sla_days = (
-        db.execute(
-            text("SELECT deadline_days FROM sla_rules WHERE category=:c"),
-            {"c": body.category},
-        ).scalar()
-        or 30
-    )
 
     vec = embed_one(body.description)
     cid = db.execute(
@@ -277,6 +283,7 @@ def create_case(body: CaseIn, db=Depends(get_db), user=Depends(current_user)):
     return {
         "id": cid,
         "institution_review_needed": needs_review,
+        "overlaps": overlaps,
         "overlaps_found": overlaps,
     }
 
@@ -295,14 +302,19 @@ def add_action(
     db=Depends(get_db),
     user=Depends(current_user),
 ):
+    sc, sp = scope_clause(user)
+    p = {"i": case_id}
+    p.update(sp)
     case = db.execute(
-        text("SELECT bureau_id, status FROM cases WHERE id=:i"), {"i": case_id}
+        text(
+            f"SELECT c.bureau_id, c.status FROM cases c JOIN institutions i ON i.id=c.institution_id WHERE c.id=:i {sc}"
+        ),
+        p,
     ).mappings().first()
     if not case:
         raise HTTPException(404, "Case not found")
 
     bureau_id = user.get("bureau_id") or case["bureau_id"]
-    import json
     meta: dict = {}
 
     if body.transfer_to:
@@ -323,16 +335,10 @@ def add_action(
     if body.new_status:
         if body.new_status not in VALID_STATUSES:
             raise HTTPException(422, f"Invalid status: {body.new_status}")
-        current = case["status"]
-        allowed = STATUS_TRANSITIONS.get(current, set())
-        if body.new_status not in allowed:
-            raise HTTPException(
-                422,
-                f"Transition from '{current}' to '{body.new_status}' is not permitted. "
-                f"Allowed: {sorted(allowed)}",
-            )
         closed_clause = (
-            ", closed_date=CURRENT_DATE" if body.new_status == "disposed" else ""
+            ", closed_date=CURRENT_DATE"
+            if body.new_status == "disposed"
+            else (", closed_date=NULL" if body.new_status == "reopened" else "")
         )
         db.execute(
             text(

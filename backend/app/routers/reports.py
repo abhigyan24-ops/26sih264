@@ -72,15 +72,19 @@ def dashboard(db=Depends(get_db), user=Depends(current_user)):
 
     overlaps = db.execute(
         text(
-            """
+            f"""
             SELECT
-              count(*) FILTER (WHERE level='high'   AND status='suggested') AS high_open,
-              count(*) FILTER (WHERE level='medium' AND status='suggested') AS medium_open,
-              count(*) FILTER (WHERE status='confirmed') AS confirmed,
-              count(*) FILTER (WHERE status='dismissed') AS dismissed
-            FROM overlap_links
+              count(*) FILTER (WHERE l.level='high'   AND l.status='suggested') AS high_open,
+              count(*) FILTER (WHERE l.level='medium' AND l.status='suggested') AS medium_open,
+              count(*) FILTER (WHERE l.status='confirmed') AS confirmed,
+              count(*) FILTER (WHERE l.status='dismissed') AS dismissed
+            FROM overlap_links l
+            JOIN cases c ON c.id = l.case_a
+            JOIN institutions i ON i.id = c.institution_id
+            WHERE 1=1 {sc}
             """
-        )
+        ),
+        sp,
     ).mappings().one()
 
     ageing = db.execute(

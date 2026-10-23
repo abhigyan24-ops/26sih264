@@ -13,7 +13,7 @@ from ..config import settings
 @lru_cache(maxsize=1)
 def _model() -> TextEmbedding:
     """Load once, reuse forever. Downloads weights on first run."""
-    return TextEmbedding(model_name=settings.embed_model)
+    return TextEmbedding(model_name=settings.embed_model, cache_dir=settings.fastembed_cache_dir)
 
 
 def embed_many(texts: list[str]) -> list[list[float]]:
