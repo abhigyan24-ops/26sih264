@@ -7,6 +7,7 @@ import CaseDetailPage from './pages/CaseDetailPage'
 import OverlapsPage from './pages/OverlapsPage'
 import InstitutionPage from './pages/InstitutionPage'
 import AlertsPage from './pages/AlertsPage'
+import ReportsPage from './pages/ReportsPage'
 import AdminPage from './pages/AdminPage'
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -26,9 +27,11 @@ export default function App() {
         <Route path="overlaps" element={<OverlapsPage />} />
         <Route path="institutions/:id" element={<InstitutionPage />} />
         <Route path="alerts" element={<AlertsPage />} />
+        <Route path="reports" element={<ReportsPage />} />
         <Route path="admin" element={<AdminPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }
+

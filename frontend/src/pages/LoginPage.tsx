@@ -94,29 +94,31 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Demo accounts */}
-          <div className="mt-6 pt-5 border-t border-slate-800">
-            <p className="text-xs text-slate-500 mb-3 text-center">Demo accounts (password: <code className="font-mono text-slate-400">demo123</code>)</p>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { u: 'admin', label: 'Admin', color: 'text-purple-400' },
-                { u: 'mgmt1', label: 'Management', color: 'text-blue-400' },
-                { u: 'rb1', label: 'RB Officer', color: 'text-cyan-400' },
-                { u: 'pgrc1', label: 'PGRC Officer', color: 'text-emerald-400' },
-                { u: 'south1', label: 'Regional (S)', color: 'text-amber-400' },
-                { u: 'north1', label: 'Regional (N)', color: 'text-amber-400' },
-              ].map(({ u, label, color }) => (
-                <button
-                  key={u}
-                  onClick={() => quickLogin(u)}
-                  className="text-left px-3 py-2 rounded-lg bg-slate-800/50 hover:bg-slate-700/60 transition-colors border border-slate-700/50 hover:border-slate-600"
-                >
-                  <div className={`text-xs font-medium ${color}`}>{label}</div>
-                  <div className="text-xs text-slate-500 font-mono">{u}</div>
-                </button>
-              ))}
+          {/* Demo accounts – visible in dev builds only (spec §10.5) */}
+          {import.meta.env.DEV && (
+            <div className="mt-6 pt-5 border-t border-slate-800">
+              <p className="text-xs text-slate-500 mb-3 text-center">Demo accounts (password: <code className="font-mono text-slate-400">demo123</code>)</p>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { u: 'admin', label: 'Admin', color: 'text-purple-400' },
+                  { u: 'mgmt1', label: 'Management', color: 'text-blue-400' },
+                  { u: 'rb1', label: 'RB Officer', color: 'text-cyan-400' },
+                  { u: 'pgrc1', label: 'PGRC Officer', color: 'text-emerald-400' },
+                  { u: 'south1', label: 'Regional (S)', color: 'text-amber-400' },
+                  { u: 'north1', label: 'Regional (N)', color: 'text-amber-400' },
+                ].map(({ u, label, color }) => (
+                  <button
+                    key={u}
+                    onClick={() => quickLogin(u)}
+                    className="text-left px-3 py-2 rounded-lg bg-slate-800/50 hover:bg-slate-700/60 transition-colors border border-slate-700/50 hover:border-slate-600"
+                  >
+                    <div className={`text-xs font-medium ${color}`}>{label}</div>
+                    <div className="text-xs text-slate-500 font-mono">{u}</div>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <p className="text-center text-xs text-slate-600 mt-6">

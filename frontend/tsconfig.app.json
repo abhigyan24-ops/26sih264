@@ -20,7 +20,15 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    /* @ alias – matches vite.config.ts resolve.alias (F8).
+       baseUrl is deprecated in TS6; ignoreDeprecations silences the warning
+       until TS7 removes it. Tracked: https://aka.ms/ts6 */
+    "ignoreDeprecations": "6.0",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
   },
   "include": ["src"]
 }

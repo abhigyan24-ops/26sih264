@@ -3,16 +3,18 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   LayoutDashboard, FileText, Link2, Bell,
-  Settings, LogOut, ChevronRight, Menu, X, Shield, Search
+  Settings, LogOut, ChevronRight, Menu, X, Shield,
+  Search, BarChart2
 } from 'lucide-react'
-import { getAlerts, searchInstitutions, getPolicy } from '../lib/api'
+import { getAlerts, searchInstitutions, me, logout } from '../lib/api'
 
 const NAV = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard', exact: true },
   { to: '/cases', icon: FileText, label: 'Cases' },
   { to: '/overlaps', icon: Link2, label: 'Overlaps' },
   { to: '/alerts', icon: Bell, label: 'Alerts', badge: true },
-  { to: '/admin', icon: Settings, label: 'Admin' },
+  { to: '/reports', icon: BarChart2, label: 'Reports' },
+  { to: '/admin', icon: Settings, label: 'Admin', adminOnly: true },
 ]
 
 export default function Layout() {
@@ -20,7 +22,14 @@ export default function Layout() {
   const [open, setOpen] = useState(true)
   const [searchModalOpen, setSearchModalOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const user = JSON.parse(localStorage.getItem('user') || '{}')
+
+  // Fetch user from /api/auth/me so top bar always reflects server state
+  const { data: user } = useQuery({
+    queryKey: ['me'],
+    queryFn: me,
+    staleTime: Infinity,
+    retry: false,
+  })
 
   const { data: alerts = [] } = useQuery({
     queryKey: ['alerts', 'unread'],
@@ -28,9 +37,6 @@ export default function Layout() {
     refetchInterval: 30_000,
   })
   const unread = (alerts as any[]).length
-
-  const { data: policyData } = useQuery({ queryKey: ['policy'], queryFn: getPolicy })
-  const globalMode = (policyData?.settings || []).find((s: any) => s.scope === 'global')?.value || 'offline'
 
   const { data: searchResults = [] } = useQuery({
     queryKey: ['global-search', searchQuery],
@@ -53,11 +59,11 @@ export default function Layout() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
-  const logout = () => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    navigate('/login')
-  }
+  const role = user?.role ?? ''
+  const isAdminOrManagement = role === 'admin' || role === 'management'
+  const displayName = user?.full_name ?? user?.username ?? '—'
+
+  const handleLogout = () => logout()
 
   return (
     <div className="flex h-screen overflow-hidden bg-surface">
@@ -84,7 +90,7 @@ export default function Layout() {
 
         {/* Nav */}
         <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
-          {NAV.map(({ to, icon: Icon, label, exact, badge }) => (
+          {NAV.filter(({ adminOnly }) => !adminOnly || isAdminOrManagement).map(({ to, icon: Icon, label, exact, badge }) => (
             <NavLink
               key={to}
               to={to}
@@ -115,16 +121,16 @@ export default function Layout() {
         <div className="border-t border-slate-800/60 p-3">
           <div className={`flex items-center gap-3 px-2 py-2 rounded-lg ${open ? '' : 'justify-center'}`}>
             <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-xs font-bold text-white shrink-0">
-              {(user.full_name || user.username || 'U').charAt(0).toUpperCase()}
+              {displayName.charAt(0).toUpperCase()}
             </div>
             {open && (
               <div className="flex-1 min-w-0 animate-fade-in">
-                <div className="text-xs font-medium text-slate-300 truncate">{user.full_name || user.username}</div>
-                <div className="text-xs text-slate-500 capitalize">{user.role}</div>
+                <div className="text-xs font-medium text-slate-300 truncate">{displayName}</div>
+                <div className="text-xs text-slate-500 capitalize">{role}</div>
               </div>
             )}
             {open && (
-              <button onClick={logout} className="text-slate-500 hover:text-rose-400 transition-colors animate-fade-in" title="Logout">
+              <button onClick={handleLogout} className="text-slate-500 hover:text-rose-400 transition-colors animate-fade-in" title="Logout">
                 <LogOut size={15} />
               </button>
             )}
@@ -136,6 +142,7 @@ export default function Layout() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Navbar */}
         <header className="h-14 border-b border-slate-800/60 bg-surface-secondary/40 backdrop-blur-md px-6 flex items-center justify-between shrink-0">
+          {/* Global search trigger */}
           <button
             onClick={() => setSearchModalOpen(true)}
             className="flex items-center gap-3 px-3 py-1.5 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700 transition-all text-xs w-72"
@@ -145,15 +152,27 @@ export default function Layout() {
             <kbd className="ml-auto text-[10px] bg-slate-800 border border-slate-700 px-1.5 py-0.5 rounded text-slate-400">Ctrl K</kbd>
           </button>
 
-          <div className="flex items-center gap-3">
-            <span className={`text-[11px] px-2.5 py-1 rounded-full border flex items-center gap-1.5 font-medium ${
-              globalMode === 'online'
-                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                : 'bg-slate-800 text-slate-400 border-slate-700'
-            }`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${globalMode === 'online' ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
-              {globalMode === 'online' ? 'Cloud Connected' : 'Offline Mode (Zero Egress)'}
-            </span>
+          <div className="flex items-center gap-4">
+            {/* ── Stage 9 mode bar slot ────────────────────────────────────
+                This space is reserved for the offline/online mode bar added in Stage 9.
+                Do NOT render any mode or connectivity status here until Stage 9.
+            ──────────────────────────────────────────────────────────────── */}
+
+            {/* User info in top bar */}
+            <div className="hidden md:flex flex-col items-end text-right">
+              <span className="text-xs font-medium text-slate-300">{displayName}</span>
+              <span className="text-xs text-slate-500 capitalize">{role}</span>
+            </div>
+
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-rose-400 transition-colors px-2 py-1 rounded-md border border-transparent hover:border-rose-500/20"
+              title="Logout"
+              id="top-bar-logout"
+            >
+              <LogOut size={14} />
+              <span className="hidden sm:inline">Logout</span>
+            </button>
           </div>
         </header>
 
