@@ -1,4 +1,5 @@
 import axios from 'axios'
+import type { CaseSummary, FilterMeta } from './types'
 
 const api = axios.create({ baseURL: '/api' })
 
@@ -23,6 +24,38 @@ api.interceptors.response.use(
 )
 
 export default api
+
+// ── FD2: Specialized API helpers ──────────────────────────────────────────
+
+export async function apiWithMeta<T>(url: string, params?: Record<string, unknown>): Promise<{ data: T; total: number }> {
+  const resp = await api.get<T>(url, { params })
+  const totalHeader = resp.headers['x-total-count']
+  const total = totalHeader != null ? parseInt(String(totalHeader), 10) : (Array.isArray(resp.data) ? resp.data.length : 0)
+  return { data: resp.data, total: isNaN(total) ? 0 : total }
+}
+
+export async function apiUpload(actionId: number, file: File): Promise<{ id: number; file_name: string }> {
+  const formData = new FormData()
+  formData.append('file', file)
+  // FD2 (b): post FormData WITHOUT setting Content-Type (browser adds boundary)
+  const { data } = await api.post<{ id: number; file_name: string }>(`/actions/${actionId}/documents`, formData)
+  return data
+}
+
+export async function downloadDocument(id: number, fileName: string): Promise<void> {
+  // FD2 (c): fetch with Authorization header, blob download
+  const response = await api.get(`/documents/${id}`, { responseType: 'blob' })
+  const ct = response.headers['content-type']
+  const blob = new Blob([response.data], ct ? { type: String(ct) } : undefined)
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = fileName
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  window.URL.revokeObjectURL(url)
+}
 
 // ── Auth ───────────────────────────────────────────────────────────────────
 export const login = async (username: string, password: string) => {
@@ -51,6 +84,12 @@ export const me = async (): Promise<{
   return data
 }
 
+// ── Meta ──────────────────────────────────────────────────────────────────
+export const getFilterMeta = async (): Promise<FilterMeta> => {
+  const { data } = await api.get('/meta/filters')
+  return data
+}
+
 // ── Dashboard ─────────────────────────────────────────────────────────────
 export const getDashboard = async () => {
   const { data } = await api.get('/dashboard')
@@ -61,6 +100,10 @@ export const getDashboard = async () => {
 export const getCases = async (params: Record<string, string | number | boolean | undefined>) => {
   const { data } = await api.get('/cases', { params })
   return data as any[]
+}
+
+export const getCasesWithMeta = async (params: Record<string, string | number | boolean | undefined>) => {
+  return apiWithMeta<CaseSummary[]>('/cases', params)
 }
 
 export const getCase = async (id: number) => {
@@ -131,7 +174,7 @@ export const getParameterRegistry = async () => {
 
 export const createCase = async (caseData: {
   aicte_id?: string
-  institution_name?: string
+  institution_name: string
   city?: string
   category: string
   description: string
@@ -140,16 +183,28 @@ export const createCase = async (caseData: {
   priority?: string
 }) => {
   const { data } = await api.post('/cases', caseData)
-  return data
+  return data as {
+    id: number
+    case_ref: string
+    institution_review_needed: boolean
+    overlaps: any[]
+  }
 }
 
 export const addCaseAction = async (caseId: number, actionData: {
   action_type: string
   remarks?: string
+  transfer_to?: string
   to_bureau?: string
   new_status?: string
 }) => {
-  const { data } = await api.post(`/cases/${caseId}/actions`, actionData)
+  const payload = {
+    action_type: actionData.action_type,
+    remarks: actionData.remarks,
+    new_status: actionData.new_status,
+    transfer_to: actionData.transfer_to || actionData.to_bureau,
+  }
+  const { data } = await api.post<{ ok: boolean; action_id: number }>(`/cases/${caseId}/actions`, payload)
   return data
 }
 
