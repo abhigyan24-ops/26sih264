@@ -27,6 +27,7 @@ from sqlalchemy import text
 
 from app.db import engine
 from app.services.embeddings import embed_many, vec_literal
+from app.services.resolution import normalize
 from app.config import settings
 
 random.seed(42)
@@ -131,17 +132,6 @@ ISSUES: dict[str, dict[str, list[str]]] = {
         ],
     },
 }
-
-
-def normalize(s: str) -> str:
-    s = s.lower()
-    for pat, rep in [
-        (r"\bgovt\.?\b", "government"), (r"\bengg\.?\b", "engineering"),
-        (r"\binst\.?\b", "institute"), (r"\btech\.?\b", "technology"),
-    ]:
-        s = re.sub(pat, rep, s)
-    s = re.sub(r"[^a-z0-9 ]+", " ", s)
-    return re.sub(r"\s+", " ", s).strip()
 
 
 def hash_pw(p: str) -> str:

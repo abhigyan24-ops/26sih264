@@ -8,11 +8,11 @@ BD2: detail is scope-checked (404 when out of scope) and returns
 """
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from sqlalchemy import text
+from sqlalchemy import bindparam, text
 
 from ..db import get_db
 from ..auth import current_user, scope_clause
-from ..services.resolution import normalize
+from ..services.resolution import normalize, resolve_detailed
 
 router = APIRouter(prefix="/api/institutions", tags=["institutions"])
 
@@ -59,6 +59,44 @@ def search(
         {"nq": nq, "like": like_pat, "raw": q, **sp},
     ).mappings().all()
     return [dict(r) for r in rows]
+
+
+# ── D7: /resolve must come before /{inst_id} ──────────────────────────────────
+@router.get("/resolve")
+def resolve(
+    name: str,
+    city: str | None = None,
+    aicte_id: str | None = None,
+    db=Depends(get_db),
+    user=Depends(current_user),
+):
+    """
+    Resolve institution name with scores and candidate recommendations (D7).
+    Applies regional scoping for regional users.
+    """
+    res = resolve_detailed(db, aicte_id, name, city)
+    if user.get("role") == "regional" and user.get("region"):
+        reg = user["region"]
+        if res.get("institution_id"):
+            inst_reg = db.execute(
+                text("SELECT region FROM institutions WHERE id=:i"), {"i": res["institution_id"]}
+            ).scalar()
+            if inst_reg != reg:
+                res["institution_id"] = None
+                res["needs_review"] = True
+                res["reason"] = "out_of_regional_scope"
+        cand_ids = [c["id"] for c in res.get("candidates", [])]
+        if cand_ids:
+            allowed_ids = set(
+                db.execute(
+                    text("SELECT id FROM institutions WHERE id IN :ids AND region=:r").bindparams(
+                        bindparam("ids", expanding=True)
+                    ),
+                    {"ids": cand_ids, "r": reg},
+                ).scalars().all()
+            )
+            res["candidates"] = [c for c in res["candidates"] if c["id"] in allowed_ids]
+    return res
 
 
 # ── BD2: institution detail ────────────────────────────────────────────────────

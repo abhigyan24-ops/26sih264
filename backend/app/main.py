@@ -12,6 +12,11 @@ logger = logging.getLogger("aicte")
 async def lifespan(app: FastAPI):
     if settings.jwt_secret == "dev-secret-change-me":
         logger.warning("WARNING [D12]: jwt_secret is using the default 'dev-secret-change-me'. Set JWT_SECRET in production.")
+    try:
+        from .services.embeddings import warm_up
+        warm_up()
+    except Exception:
+        logger.exception("embedding warm-up failed; first request will retry")
     yield
 
 app = FastAPI(

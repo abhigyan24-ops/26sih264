@@ -26,39 +26,39 @@
 
 | Requirement | Feature | Module | Test | Stage | Status |
 |---|---|---|---|---|---|
-| View institution identity, ID, aliases, location, region | Institution 360 page | `routers/institutions.py` → `GET /api/institutions/{id}` | — | 5 | 🔧 |
-| Complaint history across all bureaus/cells | Institution cases list (all bureaus) | `routers/institutions.py` | — | 5 | 🔧 |
-| Exact AICTE ID matching | Resolution rung 1 | `services/resolution.py` | — | 3 | ✅ |
-| Normalized-name matching | Trigram + IDF blend | `services/resolution.py` | — | 3 | ✅ |
-| Fuzzy name matching | pg_trgm GIN index | `db/schema.sql` idx_inst_trgm | — | 1 | ✅ |
-| Never auto-merge on weak fuzzy match | REVIEW_FLOOR threshold → officer review | `services/resolution.py` | — | 3 | ✅ |
+| View institution identity, ID, aliases, location, region | Institution 360 page | `routers/institutions.py` → `GET /api/institutions/{id}` | test_stage5_institutions.py | 5 | ✅ |
+| Complaint history across all bureaus/cells | Institution cases list (all bureaus) | `routers/institutions.py` | test_stage5_institutions.py | 5 | ✅ |
+| Exact AICTE ID matching | Resolution rung 1 | `services/resolution.py` | test_resolution.py | 3,6 | ✅ |
+| Normalized-name matching | Trigram + IDF blend | `services/resolution.py` | test_resolution.py | 3,6 | ✅ |
+| Fuzzy name matching | pg_trgm GIN index | `db/schema.sql` idx_inst_trgm | test_resolution.py | 1,6 | ✅ |
+| Never auto-merge on weak fuzzy match | REVIEW_FLOOR threshold → officer review | `services/resolution.py` | test_resolution.py | 3,6 | ✅ |
 | Aliases with approval state | `institution_aliases` table | `db/schema.sql` | — | 1 | ✅ |
 
 ### Feature Area 2: Complaint/Case Tracking
 
 | Requirement | Feature | Module | Test | Stage | Status |
 |---|---|---|---|---|---|
-| View all cases in one place | Case list with bureau/region/status filters | `routers/cases.py` `GET /api/cases` | — | 3 | ✅ |
-| Track case movement: pending/disposed/transferred/escalated | Status enum + transitions | `routers/cases.py` STATUS_TRANSITIONS | — | 3 | ✅ |
-| Action timeline | `actions` table | `db/schema.sql`, `routers/cases.py` detail | — | 3 | ✅ |
-| Identify bureau handling each case | `bureau` field on case | schema + list query | — | 1 | ✅ |
-| Case creation with validation | `POST /api/cases` | `routers/cases.py` | — | 3 | ✅ |
+| View all cases in one place | Case list with bureau/region/status filters | `routers/cases.py` `GET /api/cases` | test_stage5_cases.py | 3,5 | ✅ |
+| Track case movement: pending/disposed/transferred/escalated | Status enum + transitions | `routers/cases.py` STATUS_TRANSITIONS | test_stage5_cases.py | 3,5 | ✅ |
+| Action timeline | `actions` table | `db/schema.sql`, `routers/cases.py` detail | test_stage5_cases.py | 3,5 | ✅ |
+| Identify bureau handling each case | `bureau` field on case | schema + list query | test_cases.py | 1,5 | ✅ |
+| Case creation with validation | `POST /api/cases` | `routers/cases.py` | test_cases.py | 3,5,6 | ✅ |
 
 ### Feature Area 3: Cross-Bureau/Cell Overlap Detection (Primary Innovation)
 
 | Requirement | Feature | Module | Test | Stage | Status |
 |---|---|---|---|---|---|
-| Detect overlaps even when descriptions differ | Semantic embeddings + cosine similarity | `services/embeddings.py`, `services/overlap.py` | — | 6 | 📅 |
-| Explain why cases were flagged | Feature breakdown bars + template text | `services/routing.py`, `services/features.py` | — | 6 | 📅 |
-| Show "Potential Overlapping Cases – Coordination Required" | High-level alert + overlap card | Frontend `OverlapCard` + `alerts` table | — | 7 | 📅 |
-| Institution identity resolution before overlap | Resolution service called first | `services/resolution.py` → `scan_overlaps` | — | 3,6 | ✅/📅 |
-| Local multilingual embeddings | paraphrase-multilingual-MiniLM-L12-v2 via fastembed | `services/embeddings.py` | — | 3 | ✅ |
-| pgvector cosine similarity | `vector(384)` column + `<=>` operator | `db/schema.sql` | — | 1 | ✅ |
-| Calibrated scorer (baseline vs improved) | LogisticRegression + CalibratedClassifierCV | `ml/train_overlap.py` | — | 6 | 📅 |
-| Three threshold levels (high/medium/info) | `classify()` function | `services/overlap.py` | — | 6 | 📅 |
-| Persisted scores and breakdowns | `overlap_links.breakdown JSONB` | `db/schema.sql` | — | 1 | ✅ |
-| Hard-negative test: same institution, different issue → NOT high | Hard-negative seed pairs | `scripts/seed.py` | `ml/evaluate.py` | 6,10 | 📅 |
-| Positive test: differently worded, same issue → high | Planted overlap pairs | `scripts/seed.py` | `ml/evaluate.py` | 6,10 | 📅 |
+| Detect overlaps even when descriptions differ | Semantic embeddings + cosine similarity | `services/embeddings.py`, `services/overlap.py` | test_overlap.py | 6 | ✅ |
+| Explain why cases were flagged | Feature breakdown bars + template text | `services/routing.py`, `services/features.py` | test_features.py, test_overlap.py | 6 | ✅ |
+| Show "Potential Overlapping Cases – Coordination Required" | High-level alert + overlap card | Frontend `OverlapCard` + `alerts` table | DashboardPage.tsx | 6,7 | ✅ |
+| Institution identity resolution before overlap | Resolution service called first | `services/resolution.py` → `scan_overlaps` | test_resolution.py | 3,6 | ✅ |
+| Local multilingual embeddings | paraphrase-multilingual-MiniLM-L12-v2 via fastembed | `services/embeddings.py` | test_overlap.py | 3,6 | ✅ |
+| pgvector cosine similarity | `vector(384)` column + `<=>` operator | `db/schema.sql` | test_overlap.py | 1,6 | ✅ |
+| Calibrated scorer (baseline vs improved) | LogisticRegression + CalibratedClassifierCV | `ml/train_overlap.py` | test_train_select.py | 6 | ✅ |
+| Three threshold levels (high/medium/info) | `classify()` function | `services/overlap.py` | test_overlap.py | 6 | ✅ |
+| Persisted scores and breakdowns | `overlap_links.breakdown JSONB` | `db/schema.sql` | test_overlap.py | 1,6 | ✅ |
+| Hard-negative test: same institution, different issue → NOT high | Hard-negative seed pairs | `scripts/seed.py` | test_overlap.py | 6,10 | ✅ |
+| Positive test: differently worded, same issue → high | Planted overlap pairs | `scripts/seed.py` | test_overlap.py | 6,10 | ✅ |
 
 ### Feature Area 4: Real-Time Dashboard
 

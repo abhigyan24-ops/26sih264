@@ -141,3 +141,44 @@ export interface InstitutionSearchResult {
   region: string
   score: number
 }
+
+export interface InstitutionCandidate {
+  id: number
+  name: string
+  aicte_permanent_id: string | null
+  city: string | null
+  region: string
+  score: number
+}
+
+export interface ResolveInstitutionResult {
+  institution_id: number | null
+  confidence: number
+  needs_review: boolean
+  reason: string
+  candidates: InstitutionCandidate[]
+}
+
+export interface CreatedCaseOverlap {
+  id: number
+  level: 'high' | 'medium' | 'info'
+  probability: number
+  status: string
+  explanation?: string | null
+  other_case_id: number
+  other_case_ref: string | null
+}
+
+export interface CaseCreateResponse {
+  id: number
+  case_ref: string
+  institution_match: {
+    confidence: number
+    needs_review: boolean
+    reason: string
+  }
+  institution_review_needed: boolean
+  overlaps: CreatedCaseOverlap[]
+  overlap_scan_error?: string | null
+}
+

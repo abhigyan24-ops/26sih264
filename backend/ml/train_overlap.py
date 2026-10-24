@@ -1,32 +1,24 @@
 """
-Overlap scorer training.
+Run from backend/:  python -m ml.train_overlap
 
-Run from backend/:
-    python -m ml.train_overlap
-
-Loads seed data, builds pair features (EXCLUDES issue_key from features),
-trains a calibrated logistic regression, selects thresholds by policy targets,
-saves the model artifact, and writes results to model_versions and parameter_registry.
-
-Split strategy: by institution to prevent leakage (same institution's cases
-never appear in both train and test sets).
-
-Ground truth: a pair is positive iff both cases share the same issue_key
-AND the same institution. This is the seed evaluation label only.
-It is never used as a model feature.
+Overlap scorer training implementing D10 to D14:
+- Grouped cross-validation (StratifiedGroupKFold) for calibration
+- Out-of-fold threshold selection on train split; test split held-out
+- Plain-text ACTIVE pointer
+- Diagnostics: cosine baseline, Brier score, 5-bin reliability table, near-identical text fraction
 """
 import datetime
 import itertools
 import json
-import warnings
 from collections import defaultdict
+from pathlib import Path
 
 import joblib
 import numpy as np
-from sklearn.calibration import CalibratedClassifierCV
+from sklearn.calibration import CalibratedClassifierCV, calibration_curve
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import average_precision_score, precision_recall_curve
-from sklearn.model_selection import GroupShuffleSplit
+from sklearn.metrics import average_precision_score, brier_score_loss, precision_recall_curve
+from sklearn.model_selection import GroupShuffleSplit, StratifiedGroupKFold
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sqlalchemy import text
@@ -34,27 +26,72 @@ from sqlalchemy import text
 from app.db import engine
 from app.services.features import FEATURES, pair_features
 
-# Policy targets (recorded in parameter_registry; NOT ground truth)
-TARGET_PRECISION_HIGH = 0.90   # high alerts must be precise: false alarms cause fatigue
-TARGET_RECALL_MEDIUM = 0.90    # medium alerts must catch most real overlaps
+TARGET_PRECISION_HIGH = 0.90      # policy
+TARGET_RECALL_MEDIUM = 0.90       # policy
+MIN_FLAGGED = 10                  # a threshold must flag at least this many out-of-fold pairs to count
+MIN_POS_ALL, MIN_POS_TRAIN = 50, 25
+ART = Path("ml/artifacts")
+
+
+def _base():
+    return make_pipeline(StandardScaler(), LogisticRegression(class_weight="balanced", max_iter=1000))
+
+
+def make_calibrated(X, y, g):
+    """Calibration folds are grouped by institution (no leakage). Needs >= 5 positives per fold."""
+    splits = list(StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=7).split(X, y, g))
+    return CalibratedClassifierCV(_base(), method="sigmoid", cv=splits).fit(X, y)
+
+
+def oof_probs(X, y, g):
+    oof = np.zeros(len(y))
+    for tr, va in StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=11).split(X, y, g):
+        oof[va] = make_calibrated(X[tr], y[tr], g[tr]).predict_proba(X[va])[:, 1]
+    return oof
+
+
+def select_thresholds(y, p):
+    prec, rec, thr = precision_recall_curve(y, p)
+    prec, rec = prec[:-1], rec[:-1]
+    flagged = (p[:, None] >= thr[None, :]).sum(axis=0)
+    ok_hi = thr[(prec >= TARGET_PRECISION_HIGH) & (flagged >= MIN_FLAGGED)]
+    ok_me = thr[rec >= TARGET_RECALL_MEDIUM]
+    hi_met, me_met = len(ok_hi) > 0, len(ok_me) > 0
+    t_high = float(ok_hi.min()) if hi_met else 0.90          # fallback, labelled default_pending_data
+    t_med = float(ok_me.max()) if me_met else 0.50
+    return {
+        "t_high": round(t_high, 4),
+        "t_med": round(min(t_med, t_high), 4),
+        "high_origin": "learned_synthetic" if hi_met else "default_pending_data",
+        "med_origin": "learned_synthetic" if me_met else "default_pending_data",
+    }
+
+
+def at(y, p, t):
+    pred = p >= t
+    tp = int((pred & (y == 1)).sum())
+    n = int(pred.sum())
+    return {
+        "flagged": n,
+        "precision": round(tp / n, 4) if n else None,
+        "recall": round(tp / max(1, int(y.sum())), 4),
+    }
 
 
 def load_pairs():
     """
-    Load all cases with embeddings, build all same-institution pairs.
+    Load all cases with embeddings from DB, build all same-institution pairs.
     Returns X (features), y (labels), g (institution groups for split).
     """
     with engine.connect() as c:
         rows = c.execute(
-            text(
-                """
+            text("""
                 SELECT id, institution_id, category, bureau_id, closed_date,
                        received_date, inst_match_conf, issue_key,
                        embedding::text AS emb
                 FROM cases
                 WHERE embedding IS NOT NULL
-                """
-            )
+            """)
         ).mappings().all()
 
     by_inst: dict = defaultdict(list)
@@ -85,135 +122,112 @@ def load_pairs():
 
 
 def main():
-    warnings.filterwarnings("ignore", category=UserWarning, module="sklearn")
     X, y, g = load_pairs()
     n_pos = int(y.sum())
-    print(f"Pairs: {len(y)} total | {n_pos} positive ({y.mean():.1%})")
+    print(f"Pairs: {len(y)} total | {n_pos} positive ({y.mean():.1%}) across {len(set(g))} institutions")
 
-    if len(y) < 10:
-        print("ERROR: Too few pairs to train. Run seed.py first.")
-        return
-
-    # Group-split by institution to prevent leakage
-    splitter = GroupShuffleSplit(n_splits=1, test_size=0.30, random_state=7)
-    tr, te = next(splitter.split(X, y, g))
-
-    # Calibrated model (for probability outputs)
-    base_pipe = make_pipeline(
-        StandardScaler(),
-        LogisticRegression(class_weight="balanced", max_iter=1000),
-    )
-    cal = CalibratedClassifierCV(base_pipe, method="sigmoid", cv=5)
-    cal.fit(X[tr], y[tr])
-
-    # Plain logistic for interpretable feature contributions (bars in the UI)
-    explain_pipe = make_pipeline(
-        StandardScaler(),
-        LogisticRegression(class_weight="balanced", max_iter=1000),
-    )
-    explain_pipe.fit(X[tr], y[tr])
-
-    # Evaluate on held-out set
-    p = cal.predict_proba(X[te])[:, 1]
-    prec_curve, rec_curve, thr_curve = precision_recall_curve(y[te], p)
-
-    # Threshold selection
-    ok_hi = [t for pr, t in zip(prec_curve[:-1], thr_curve) if pr >= TARGET_PRECISION_HIGH]
-    ok_me = [t for rc, t in zip(rec_curve[:-1], thr_curve) if rc >= TARGET_RECALL_MEDIUM]
-    t_high = float(min(ok_hi)) if ok_hi else 0.90
-    t_med = float(max(ok_me)) if ok_me else 0.55
-    t_med = min(t_med, t_high)
-
-    def metrics_at(t: float) -> dict:
-        pred = p >= t
-        tp = int((pred & (y[te] == 1)).sum())
-        fp = int((pred & (y[te] == 0)).sum())
-        fn = int((~pred & (y[te] == 1)).sum())
-        prec = tp / max(1, tp + fp)
-        rec = tp / max(1, tp + fn)
-        f1 = 2 * prec * rec / max(1e-9, prec + rec)
-        return {
-            "precision": round(prec, 4),
-            "recall": round(rec, 4),
-            "f1": round(f1, 4),
-            "tp": tp, "fp": fp, "fn": fn,
-            "flagged": int(pred.sum()),
-        }
-
-    pr_auc = float(average_precision_score(y[te], p))
-    metrics = {
-        "pr_auc": round(pr_auc, 4),
-        "high": metrics_at(t_high),
-        "medium": metrics_at(t_med),
-        "n_train": int(len(tr)),
-        "n_test": int(len(te)),
-        "split": "grouped by institution",
-        "data_note": "SYNTHETIC EVALUATION — metrics from synthetic seed data only",
-        "features": FEATURES,
-    }
-
-    print(json.dumps(metrics, indent=2))
-    print(f"t_high={t_high:.4f}  t_med={t_med:.4f}")
-
-    if not ok_hi:
-        print(
-            "WARNING: No threshold meets the target precision of "
-            f"{TARGET_PRECISION_HIGH}. t_high set to 0.90. "
-            "Inspect the data — positives may be too easy or too noisy."
+    if n_pos < MIN_POS_ALL:
+        raise SystemExit(
+            f"Only {n_pos} positive pairs; need >= {MIN_POS_ALL}. Re-seed with more institutions."
         )
 
-    version = "overlap-" + datetime.datetime.now().strftime("%Y%m%d-%H%M")
-    artifact = {
-        "calibrated": cal,
-        "explain": explain_pipe,
-        "features": FEATURES,
-        "t_high": t_high,
-        "t_med": t_med,
-        "version": version,
+    tr, te = next(GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=7).split(X, y, g))
+    if y[tr].sum() < MIN_POS_TRAIN:
+        raise SystemExit("Too few positive training pairs; re-seed with more institutions.")
+
+    # Thresholds from out-of-fold probabilities on train only (D12)
+    p_oof = oof_probs(X[tr], y[tr], g[tr])
+    sel = select_thresholds(y[tr], p_oof)
+
+    cal = make_calibrated(X[tr], y[tr], g[tr])
+    explain = _base().fit(X[tr], y[tr])
+
+    # Evaluate held-out TEST institutions
+    p_te = cal.predict_proba(X[te])[:, 1]
+    cos_te = X[te][:, FEATURES.index("cos")]
+    base_pred = cos_te >= 0.80  # baseline: cosine alone at 0.80
+    btp = int((base_pred & (y[te] == 1)).sum())
+
+    frac, mean_p = calibration_curve(y[te], p_te, n_bins=5, strategy="quantile")
+
+    metrics = {
+        "split": "grouped by institution, 20% test, thresholds from out-of-fold predictions on train",
+        "n_pairs": int(len(y)),
+        "n_pos_train": int(y[tr].sum()),
+        "n_pos_test": int(y[te].sum()),
+        "pr_auc_test": round(float(average_precision_score(y[te], p_te)), 4),
+        "brier_test": round(float(brier_score_loss(y[te], p_te)), 4),
+        "high": at(y[te], p_te, sel["t_high"]),
+        "medium": at(y[te], p_te, sel["t_med"]),
+        "baseline_cos_0.80": {
+            "flagged": int(base_pred.sum()),
+            "precision": round(btp / int(base_pred.sum()), 4) if base_pred.sum() else None,
+            "recall": round(btp / max(1, int(y[te].sum())), 4),
+        },
+        "reliability_5bin": {
+            "mean_predicted": mean_p.round(3).tolist(),
+            "observed": frac.round(3).tolist(),
+        },
+        "positives_with_cos>=0.99": round(float((X[:, FEATURES.index("cos")][y == 1] >= 0.99).mean()), 4),
+        "note": "synthetic data; probabilities calibrated to the synthetic base rate",
     }
 
-    from pathlib import Path
-    art_dir = Path(__file__).parent / "artifacts"
-    art_dir.mkdir(parents=True, exist_ok=True)
-    joblib.dump(artifact, art_dir / f"{version}.joblib")
-    joblib.dump(version, art_dir / "ACTIVE")
-    print(f"Saved: {art_dir / version}.joblib")
-    print(f"Active pointer: {art_dir / 'ACTIVE'} → {version}")
+    version = "overlap-" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    ART.mkdir(parents=True, exist_ok=True)
+    joblib.dump(
+        {
+            "calibrated": cal,
+            "explain": explain,
+            "features": FEATURES,
+            "t_high": sel["t_high"],
+            "t_med": sel["t_med"],
+            "version": version,
+        },
+        ART / f"{version}.joblib",
+    )
+    # Plain text ACTIVE pointer (D10)
+    (ART / "ACTIVE").write_text(version)
 
     with engine.begin() as c:
+        c.execute(text("UPDATE model_versions SET status='retired' WHERE kind='overlap' AND status='active'"))
         c.execute(
-            text(
-                "INSERT INTO model_versions (id,kind,trained_on,metrics,status) "
-                "VALUES (:i,'overlap',:t,CAST(:m AS jsonb),'active') "
-                "ON CONFLICT (id) DO NOTHING"
-            ),
-            {
-                "i": version,
-                "t": "synthetic seed v1 (SYNTHETIC EVALUATION)",
-                "m": json.dumps(metrics),
-            },
+            text("""
+                INSERT INTO model_versions (id, kind, trained_on, metrics, status)
+                VALUES (:i, 'overlap', :t, CAST(:m AS jsonb), 'active')
+            """),
+            {"i": version, "t": "synthetic seed", "m": json.dumps(metrics)},
         )
-        for name, val, origin_note in [
-            ("overlap_threshold_high", t_high,
-             f"target precision {TARGET_PRECISION_HIGH} on synthetic data"),
-            ("overlap_threshold_medium", t_med,
-             f"target recall {TARGET_RECALL_MEDIUM} on synthetic data"),
+        for name, val, origin in [
+            ("overlap_threshold_high", sel["t_high"], sel["high_origin"]),
+            ("overlap_threshold_medium", sel["t_med"], sel["med_origin"]),
         ]:
             c.execute(
-                text(
-                    "INSERT INTO parameter_registry "
-                    "(parameter,value,origin,derived_from,metrics,model_version) "
-                    "VALUES (:p,:v,'learned_synthetic',:d,CAST(:m AS jsonb),:mv)"
-                ),
+                text("""
+                    INSERT INTO parameter_registry (parameter, value, origin, derived_from, metrics, model_version)
+                    VALUES (:p, :v, :o, :d, CAST(:m AS jsonb), :mv)
+                """),
                 {
                     "p": name,
                     "v": f"{val:.4f}",
-                    "d": origin_note,
-                    "m": json.dumps(metrics),
+                    "o": origin,
                     "mv": version,
+                    "m": json.dumps(metrics),
+                    "d": f"out-of-fold; target precision {TARGET_PRECISION_HIGH} / recall {TARGET_RECALL_MEDIUM}",
                 },
             )
-    print("✓ Model version and parameters written to database.")
+
+    print(json.dumps(metrics, indent=2))
+
+    # Interpretation rules
+    high_prec = metrics["high"]["precision"]
+    if high_prec is not None and high_prec < 0.90:
+        print(f"[NOTE] High precision on TEST is {high_prec:.1%} (< 90%). Met out-of-fold but lower on held-out institutions.")
+    if metrics["positives_with_cos>=0.99"] > 0.5:
+        print("[NOTE] Positive pairs are mostly near-identical text; this synthetic set is probably too easy. Do not quote these numbers as accuracy.")
+    base_prec = metrics["baseline_cos_0.80"]["precision"]
+    base_rec = metrics["baseline_cos_0.80"]["recall"]
+    if base_prec and high_prec and abs(base_prec - high_prec) <= 0.02 and abs(base_rec - metrics["high"]["recall"]) <= 0.02:
+        print("[NOTE] Cosine-only baseline matches the full model within 2% precision and recall on this synthetic set.")
 
 
 if __name__ == "__main__":

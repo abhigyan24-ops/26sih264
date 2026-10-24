@@ -423,6 +423,54 @@ export default function CaseDetailPage() {
         </div>
       )}
 
+      {/* F-D3: Under pre-action banner, Possible overlaps (n) chips */}
+      {overlaps.length > 0 && (
+        <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2.5">
+          <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2 font-medium text-slate-300">
+              <AlertTriangle size={15} className="text-amber-400 shrink-0" />
+              <span>Possible overlaps ({overlaps.length})</span>
+            </div>
+            <span className="text-[11px] text-slate-500 font-mono">Stage 6 Overlap Engine</span>
+          </div>
+
+          <div className="flex flex-wrap gap-2 pt-0.5">
+            {overlaps.map((o) => (
+              <Link
+                key={o.id}
+                to={`/cases/${o.other_case_id}`}
+                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-mono border transition-all ${
+                  o.level === 'high'
+                    ? 'bg-rose-950/40 border-rose-500/30 text-rose-300 hover:bg-rose-900/50'
+                    : o.level === 'medium'
+                    ? 'bg-amber-950/40 border-amber-500/30 text-amber-300 hover:bg-amber-900/50'
+                    : 'bg-slate-800/80 border-slate-700 text-slate-300 hover:bg-slate-700'
+                }`}
+              >
+                <span className="font-semibold text-white">
+                  {o.other_case_ref || `Case #${o.other_case_id}`}
+                </span>
+                <span
+                  className={`text-[10px] uppercase font-sans font-bold px-1.5 py-0.5 rounded ${
+                    o.level === 'high'
+                      ? 'bg-rose-500/20 text-rose-300'
+                      : o.level === 'medium'
+                      ? 'bg-amber-500/20 text-amber-300'
+                      : 'bg-slate-700 text-slate-300'
+                  }`}
+                >
+                  {o.level}
+                </span>
+                <span className="text-[11px] text-slate-400 font-sans">
+                  {Math.round(o.probability * 100)}%
+                </span>
+                <ArrowRight size={11} className="text-slate-400" />
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Main Grid: Left Timeline + Action Form | Right Overlaps */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column (2/3 width) */}
@@ -723,14 +771,14 @@ export default function CaseDetailPage() {
                 <AlertTriangle size={15} className="text-orange-400" />
                 Cross-Case Overlaps
               </h3>
-              <span className="text-xs text-slate-500">Stage 5 (Read-only)</span>
+              <span className="text-xs text-slate-500">Stage 6 Engine (Read-only)</span>
             </div>
 
             {overlaps.length === 0 ? (
               <div className="py-8 text-center text-xs text-slate-500 space-y-1.5">
                 <p>No overlap links recorded for this case.</p>
                 <p className="text-[11px] text-slate-600">
-                  Automated overlap scoring arrives in Stage 6.
+                  No cross-case overlaps flagged for this complaint.
                 </p>
               </div>
             ) : (

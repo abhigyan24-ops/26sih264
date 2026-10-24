@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy import text
 
 from ..db import get_db
-from ..auth import current_user
+from ..auth import current_user, scope_clause
 
 router = APIRouter(prefix="/api/overlaps", tags=["overlaps"])
 
@@ -17,11 +17,22 @@ def list_overlaps(
     db=Depends(get_db),
     user=Depends(current_user),
 ):
-    sql = """
+    sc, sp = scope_clause(user, table_alias="i")
+    where_clauses = ["l.status = :s"]
+    params = {"s": status}
+    if level:
+        where_clauses.append("l.level = :lvl")
+        params["lvl"] = level
+    if sc:
+        where_clauses.append(sc.replace("AND ", "", 1).strip())
+    params.update(sp)
+
+    where_sql = " AND ".join(where_clauses)
+    sql = f"""
       SELECT l.id, l.level, l.probability, l.breakdown, l.status,
              l.lead_bureau_id, l.explanation, l.explanation_src,
              l.model_version, l.decision_reason,
-             i.id AS institution_id, i.name AS institution,
+             i.id AS institution_id, i.name AS institution, i.region,
              ca.id AS a_id, ca.case_ref AS a_ref, ca.category AS a_cat,
              ba.code AS a_bureau, ca.description AS a_desc, ca.status AS a_status,
              cb.id AS b_id, cb.case_ref AS b_ref, cb.category AS b_cat,
@@ -32,11 +43,11 @@ def list_overlaps(
       JOIN institutions i ON i.id=ca.institution_id
       JOIN bureaus ba ON ba.id=ca.bureau_id
       JOIN bureaus bb ON bb.id=cb.bureau_id
-      WHERE l.status=:s AND (:lvl IS NULL OR l.level=:lvl)
+      WHERE {where_sql}
       ORDER BY (l.level='high') DESC, l.probability DESC
       LIMIT 100
     """
-    return [dict(r) for r in db.execute(text(sql), {"s": status, "lvl": level}).mappings()]
+    return [dict(r) for r in db.execute(text(sql), params).mappings()]
 
 
 class Decision(BaseModel):
@@ -53,8 +64,15 @@ def decide(
     db=Depends(get_db),
     user=Depends(current_user),
 ):
+    sc, sp = scope_clause(user, table_alias="i")
     l = db.execute(
-        text("SELECT * FROM overlap_links WHERE id=:i"), {"i": overlap_id}
+        text(f"""
+            SELECT l.* FROM overlap_links l
+            JOIN cases ca ON ca.id=l.case_a
+            JOIN institutions i ON i.id=ca.institution_id
+            WHERE l.id=:i {sc}
+        """),
+        {"i": overlap_id, **sp},
     ).mappings().first()
     if not l:
         raise HTTPException(404, "Overlap not found")

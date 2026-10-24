@@ -8,8 +8,9 @@ BD6: case detail excludes issue_key/embedding; adds sla_source, days_open,
 BD7: add_action returns {ok, action_id}; validates transfer/reopen/link/hold.
 BD8: create_case also returns case_ref.
 """
-from datetime import date, timedelta
 import json
+import logging
+from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel
@@ -18,10 +19,11 @@ from sqlalchemy import text
 from ..db import get_db
 from ..auth import current_user, scope_clause
 from ..services.embeddings import embed_one, vec_literal
-from ..services.resolution import resolve_institution
+from ..services.resolution import resolve_detailed, resolve_institution
 from ..services.overlap import scan_overlaps
 from ..config import settings
 
+logger = logging.getLogger("aicte")
 router = APIRouter(prefix="/api/cases", tags=["cases"])
 
 VALID_STATUSES = {
@@ -293,6 +295,7 @@ def case_detail(case_id: int, db=Depends(get_db), user=Depends(current_user)):
 
 class CaseIn(BaseModel):
     institution_name: str
+    institution_id: int | None = None  # D7: officer-picked skips resolution
     aicte_id: str | None = None
     city: str | None = None
     category: str
@@ -320,15 +323,36 @@ def create_case(body: CaseIn, db=Depends(get_db), user=Depends(current_user)):
     if sla_days is None:
         raise HTTPException(422, f"Unknown category: {body.category}")
 
-    inst_id, conf, needs_review = resolve_institution(
-        db, body.aicte_id, body.institution_name, body.city
-    )
-    if inst_id is None:
-        raise HTTPException(
-            422,
-            f"Institution could not be resolved (best score: {conf:.2f}). "
-            "Provide the AICTE Permanent ID or pick from the search list.",
-        )
+    # D7: Institution resolution with officer override option
+    if body.institution_id:
+        inst_row = db.execute(
+            text("SELECT id, region FROM institutions WHERE id=:i"), {"i": body.institution_id}
+        ).mappings().first()
+        if not inst_row:
+            raise HTTPException(422, "institution_id does not exist")
+        if user.get("role") == "regional" and user.get("region") and inst_row["region"] != user["region"]:
+            raise HTTPException(403, "Institution is outside your regional jurisdiction")
+        inst_id, conf, needs_review, reason = body.institution_id, 1.0, False, "officer_confirmed"
+    else:
+        r = resolve_detailed(db, body.aicte_id, body.institution_name, body.city)
+        inst_id, conf, needs_review, reason = r["institution_id"], r["confidence"], r["needs_review"], r["reason"]
+        if user.get("role") == "regional" and user.get("region"):
+            if inst_id:
+                inst_reg = db.execute(
+                    text("SELECT region FROM institutions WHERE id=:i"), {"i": inst_id}
+                ).scalar()
+                if inst_reg != user["region"]:
+                    inst_id = None
+                    needs_review = True
+                    reason = "out_of_regional_scope"
+        if inst_id is None:
+            raise HTTPException(
+                422,
+                detail={
+                    "message": "Institution could not be resolved; pick one",
+                    "candidates": r["candidates"],
+                },
+            )
 
     vec = embed_one(body.description)
     cid = db.execute(
@@ -373,7 +397,14 @@ def create_case(body: CaseIn, db=Depends(get_db), user=Depends(current_user)):
         {"c": cid, "b": bureau_id, "o": user["id"]},
     )
 
-    overlaps = scan_overlaps(db, cid)
+    # D9 & Section 6.7: scan inside SAVEPOINT
+    overlaps, scan_error = [], None
+    try:
+        with db.begin_nested():
+            overlaps = scan_overlaps(db, cid)
+    except Exception:
+        logger.exception("overlap scan failed for case %s", cid)
+        scan_error = "overlap scan failed; the case was saved"
 
     # BD8: fetch the case_ref we just set
     case_ref = db.execute(
@@ -385,9 +416,15 @@ def create_case(body: CaseIn, db=Depends(get_db), user=Depends(current_user)):
     return {
         "id": cid,
         "case_ref": case_ref,          # BD8: additive
-        "institution_review_needed": needs_review,
+        "institution_match": {
+            "confidence": conf,
+            "needs_review": needs_review,
+            "reason": reason,
+        },
+        "institution_review_needed": needs_review,  # backward compatibility
         "overlaps": overlaps,
-        "overlaps_found": overlaps,
+        "overlaps_found": overlaps,                  # backward compatibility
+        "overlap_scan_error": scan_error,
     }
 
 

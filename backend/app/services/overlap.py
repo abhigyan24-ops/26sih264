@@ -1,86 +1,91 @@
 """
-Overlap detection service.
-
-Scans for potentially overlapping cases when a new case is created or
-when triggered by the periodic worker.
-
-Pipeline:
-  1. Load calibrated scorer from ml/artifacts/ACTIVE (falls back to cosine-only)
-  2. Find same-institution cases with precomputed cosine similarity (pgvector)
-  3. Build feature vectors
-  4. Score each pair
-  5. Classify: high | medium | info (or skip below threshold)
-  6. Insert overlap_links ON CONFLICT DO NOTHING (idempotent)
-  7. Generate alerts for high/medium overlaps
-
-Classification rules (after calibration):
-  - high:   p >= t_high AND both active AND cross-bureau
-  - medium: p >= t_med  AND both active
-  - info:   p >= t_med  (historical pairs)
+Overlap detection service implementing D9, D10, D17, D19.
+- Plain-text ACTIVE pointer checked on each scan (retraining hot-reload)
+- Feature set validation (train/serve skew protection)
+- Idempotent pair checking
+- Bi-directional sensitivity check
+- Savepoint-safe execution
 """
 import json
+import logging
 from pathlib import Path
 
 import joblib
 from sqlalchemy import text
 
-from .features import pair_features
+from .features import FEATURES, pair_features
 from .routing import explain_overlap
 
-ART = Path(__file__).parent.parent.parent / "ml" / "artifacts"
+log = logging.getLogger(__name__)
+ART = Path(__file__).resolve().parent.parent.parent / "ml" / "artifacts"
+UNTRAINED_T_HIGH, UNTRAINED_T_MED = 0.85, 0.60
 _cache: dict = {}
 
 
 def load_model() -> dict | None:
-    """Load active model from artifacts directory. Returns None if not trained yet."""
-    if "m" not in _cache:
-        ptr = ART / "ACTIVE"
-        if not ptr.exists():
+    """
+    Load active model from ml/artifacts/ACTIVE.
+    Re-reads ACTIVE on each scan so retraining is picked up without server restart (D10).
+    Validates features match canonical FEATURES list (D17).
+    """
+    ptr = ART / "ACTIVE"
+    if not ptr.exists():
+        return None
+    try:
+        ver = ptr.read_text().strip()
+    except Exception:
+        return None
+
+    if _cache.get("ver") != ver:
+        artifact_path = ART / f"{ver}.joblib"
+        if not artifact_path.exists():
             return None
-        version = joblib.load(ptr)
-        _cache["m"] = joblib.load(ART / f"{version}.joblib")
+        m = joblib.load(artifact_path)
+        if m.get("features") != FEATURES:
+            raise RuntimeError(
+                f"Model {ver} was trained on {m.get('features')}, "
+                f"code expects {FEATURES}; retraining required."
+            )
+        _cache.update(ver=ver, m=m)
     return _cache.get("m")
 
 
 def reload_model() -> None:
-    """Force reload (call after promoting a new model version)."""
+    """Clear memory cache to force re-reading model from disk."""
     _cache.clear()
 
 
 def score_pair(m: dict | None, a: dict, b: dict, cos: float) -> tuple[float, dict]:
     """
     Returns (probability, breakdown).
-    breakdown maps feature_name → {value, contribution}.
-    If model is not trained, falls back to cosine similarity only.
+    Breakdown contains {feature: {value, contribution}} for transparent explanation bars.
     """
     x = [pair_features(a, b, cos)]
-    if m is None:
-        return cos, {}
+    if not m:
+        return float(cos), {}
 
     p = float(m["calibrated"].predict_proba(x)[0, 1])
-
-    # Explanation uses the plain LR (not calibrated) for interpretable contributions.
-    # Contributions are directional bar widths in the UI.
     scaler = m["explain"].steps[0][1]
     lr = m["explain"].steps[1][1]
     scaled = scaler.transform(x)[0]
     contrib = (scaled * lr.coef_[0]).tolist()
-
     breakdown = {
-        feat: {"value": round(val, 3), "contribution": round(cn, 3)}
-        for feat, val, cn in zip(m["features"], x[0], contrib)
+        f: {"value": round(v, 3), "contribution": round(c, 3)}
+        for f, v, c in zip(m["features"], x[0], contrib)
     }
     return p, breakdown
 
 
-def classify(m: dict | None, p: float, a: dict, b: dict) -> str | None:
-    """Return level string or None if below all thresholds."""
-    t_high = m["t_high"] if m else 0.85
-    t_med = m["t_med"] if m else 0.60
+def classify(p: float, a: dict, b: dict, t_high: float, t_med: float) -> str | None:
+    """
+    D19: Overlap level classification rules:
+    - High: p >= t_high AND both open AND different bureaus
+    - Medium: p >= t_med AND both open (includes same-bureau high-p pairs)
+    - Info: p >= t_med AND at least one case closed
+    - None: p < t_med
+    """
     both_active = a["closed_date"] is None and b["closed_date"] is None
-    cross = a["bureau_id"] != b["bureau_id"]
-
-    if p >= t_high and both_active and cross:
+    if p >= t_high and both_active and a["bureau_id"] != b["bureau_id"]:
         return "high"
     if p >= t_med and both_active:
         return "medium"
@@ -89,102 +94,123 @@ def classify(m: dict | None, p: float, a: dict, b: dict) -> str | None:
     return None
 
 
-def scan_overlaps(db, case_id: int) -> list[dict]:
+def scan_overlaps(db, case_id: int, max_candidates: int = 200) -> list[dict]:
     """
     Scan for overlaps involving case_id against same-institution cases.
-    Returns list of {other, level, p} for any found overlaps.
-    Idempotent: uses ON CONFLICT DO NOTHING.
+    Returns list of found overlaps.
+    Idempotent: skips already existing pairs.
     """
     m = load_model()
+    t_high = m["t_high"] if m else UNTRAINED_T_HIGH
+    t_med = m["t_med"] if m else UNTRAINED_T_MED
 
-    me = db.execute(
-        text(
-            "SELECT id, institution_id, category, bureau_id, closed_date, "
-            "received_date, inst_match_conf, sensitivity_flag "
-            "FROM cases WHERE id=:i"
-        ),
+    me_row = db.execute(
+        text("""
+            SELECT id, institution_id, category, bureau_id, closed_date,
+                   received_date, inst_match_conf, sensitivity_flag
+            FROM cases WHERE id=:i
+        """),
         {"i": case_id},
-    ).mappings().one()
+    ).mappings().one_or_none()
 
-    me = dict(me)
+    if not me_row:
+        return []
 
-    # Fetch same-institution cases with cosine similarity computed by pgvector
+    me = dict(me_row)
+
     others = db.execute(
-        text(
-            """
-            SELECT c.id, c.category, c.bureau_id, c.closed_date, c.received_date,
-                   c.inst_match_conf, c.case_ref,
-                   1 - (c.embedding <=> (SELECT embedding FROM cases WHERE id=:i)) AS cos
-            FROM cases c
+        text("""
+            SELECT c.id, c.case_ref, c.category, c.bureau_id, c.closed_date,
+                   c.received_date, c.inst_match_conf, c.sensitivity_flag,
+                   1 - (c.embedding <=> m.embedding) AS cos
+            FROM cases c, (SELECT embedding FROM cases WHERE id=:i) m
             WHERE c.institution_id=:inst
               AND c.id <> :i
               AND c.embedding IS NOT NULL
-            """
-        ),
-        {"i": case_id, "inst": me["institution_id"]},
+              AND m.embedding IS NOT NULL
+            ORDER BY c.received_date DESC
+            LIMIT :lim
+        """),
+        {"i": case_id, "inst": me["institution_id"], "lim": max_candidates},
     ).mappings().all()
 
     found = []
-    for o in others:
-        o = dict(o)
+    for o_row in others:
+        o = dict(o_row)
+        a_id, b_id = sorted((case_id, o["id"]))
+
+        # Idempotency check: skip already evaluated pairs (D9)
+        existing = db.execute(
+            text("SELECT 1 FROM overlap_links WHERE case_a=:a AND case_b=:b"),
+            {"a": a_id, "b": b_id},
+        ).first()
+        if existing:
+            continue
+
         cos = float(o["cos"]) if o["cos"] is not None else 0.0
         p, breakdown = score_pair(m, me, o, cos)
-        level = classify(m, p, me, o)
+        level = classify(p, me, o, t_high, t_med)
         if not level:
             continue
 
-        # Canonical ordering: always case_a < case_b
-        a_id, b_id = sorted((case_id, o["id"]))
-
-        text_, src = explain_overlap(
-            db, breakdown, me, o, sensitive=bool(me["sensitivity_flag"])
-        )
+        # D9: Sensitive if either case is flagged sensitive
+        sensitive = bool(me.get("sensitivity_flag")) or bool(o.get("sensitivity_flag"))
+        expl, src = explain_overlap(db, breakdown, me, o, sensitive=sensitive)
 
         row = db.execute(
-            text(
-                """
+            text("""
                 INSERT INTO overlap_links
                   (case_a, case_b, level, probability, breakdown,
                    model_version, explanation, explanation_src)
-                VALUES (:a, :b, :l, :p, CAST(:bd AS jsonb), :mv, :ex, :src)
+                VALUES
+                  (:a, :b, :l, :p, CAST(:bd AS jsonb), :mv, :ex, :src)
                 ON CONFLICT (case_a, case_b) DO NOTHING
                 RETURNING id
-                """
-            ),
+            """),
             {
                 "a": a_id,
                 "b": b_id,
                 "l": level,
-                "p": p,
+                "p": round(p, 4),
                 "bd": json.dumps(breakdown),
                 "mv": m["version"] if m else "untrained",
-                "ex": text_,
+                "ex": expl,
                 "src": src,
             },
         ).first()
 
-        if row and level in ("high", "medium"):
-            # Alert both bureaus involved
-            for bureau_id in {me["bureau_id"], o["bureau_id"]}:
-                db.execute(
-                    text(
-                        "INSERT INTO alerts "
-                        "(kind, case_id, overlap_id, bureau_id, message) "
-                        "VALUES (:k, :c, :oid, :b, :msg)"
-                    ),
-                    {
-                        "k": f"overlap_{level}",
-                        "c": case_id,
-                        "oid": row.id,
-                        "b": bureau_id,
-                        "msg": (
-                            "Potential Overlapping Cases – Coordination Required"
-                            if level == "high"
-                            else "Related cases found for the same institution"
-                        ),
-                    },
+        if row:
+            overlap_id = row.id
+            if level in ("high", "medium"):
+                msg = (
+                    "Potential Overlapping Cases – Coordination Required"
+                    if level == "high"
+                    else "Related cases found for the same institution"
                 )
+                for bureau in {me["bureau_id"], o["bureau_id"]}:
+                    db.execute(
+                        text("""
+                            INSERT INTO alerts (kind, case_id, overlap_id, bureau_id, message)
+                            VALUES (:k, :c, :o, :b, :m)
+                        """),
+                        {
+                            "k": f"overlap_{level}",
+                            "c": case_id,
+                            "o": overlap_id,
+                            "b": bureau,
+                            "m": msg,
+                        },
+                    )
 
-        found.append({"other": o["id"], "level": level, "p": round(p, 3)})
+            found.append({
+                "overlap_id": overlap_id,
+                "other_case_id": o["id"],
+                "other_case_ref": o.get("case_ref"),
+                "level": level,
+                "probability": round(p, 3),
+                "breakdown": breakdown,
+                "explanation": expl,
+                "explanation_src": src,
+            })
 
     return found

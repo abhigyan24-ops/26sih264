@@ -12,3 +12,5 @@ pgdata/
 .ruff_cache/
 *.log
 .cache/
+backend/models/
+models/

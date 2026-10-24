@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { CaseSummary, FilterMeta } from './types'
+import type { CaseSummary, FilterMeta, ResolveInstitutionResult, CaseCreateResponse } from './types'
 
 const api = axios.create({ baseURL: '/api' })
 
@@ -172,23 +172,30 @@ export const getParameterRegistry = async () => {
   return data as any[]
 }
 
-export const createCase = async (caseData: {
+export const resolveInstitution = async (
+  name: string,
+  city?: string,
   aicte_id?: string
+): Promise<ResolveInstitutionResult> => {
+  const { data } = await api.get('/institutions/resolve', {
+    params: { name, city: city || undefined, aicte_id: aicte_id || undefined },
+  })
+  return data
+}
+
+export const createCase = async (caseData: {
   institution_name: string
+  institution_id?: number | null
+  aicte_id?: string
   city?: string
   category: string
   description: string
   bureau_code: string
   sensitive?: boolean
   priority?: string
-}) => {
+}): Promise<CaseCreateResponse> => {
   const { data } = await api.post('/cases', caseData)
-  return data as {
-    id: number
-    case_ref: string
-    institution_review_needed: boolean
-    overlaps: any[]
-  }
+  return data
 }
 
 export const addCaseAction = async (caseId: number, actionData: {

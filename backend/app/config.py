@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     embed_model: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
     embed_dim: int = 384
     fastembed_cache_dir: str = "./.cache/fastembed"
+    embed_cache_dir: str = "./models"
 
 
 settings = Settings()
