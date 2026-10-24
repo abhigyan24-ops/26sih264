@@ -216,6 +216,21 @@ Implementation proceeds from:
 
 ---
 
+## Stage 5 Implementation (Cases, Detail, Institution 360)
+
+Stage 5 is complete with all backend and frontend acceptance criteria satisfied:
+- **Cases List (`/cases`)**: Server-side sorting, pagination, and all PS filters (`q`, `institution`, `aicte_id`, `bureau`, `region`, `category`, `status`, `date_from`, `date_to`, `overdue`) bound to the URL query string (`useSearchParams`). Accessible table navigation, total count from `X-Total-Count`, and region scoping for regional officers.
+- **Register Case Dialog**: Integrated modal with debounced autocomplete for institutions, auto-filling AICTE ID and city, form validation, and inline resolution error handling.
+- **Case Detail (`/cases/:id`)**: Full case overview with SLA tracking, illustrative notice for seed rules, pre-action sibling banner, chronological movement timeline (highlighting transfers, escalations, closures, and reopens), document download links, and action recording form with file attachment. Read-only overlap panel.
+- **Institution 360 (`/institutions/:id`)**: Comprehensive institution profile showing address and AICTE ID, summary metrics, "Who is dealing with this institution right now" multi-unit indicator, repeat categories, all-cases historical table across bureaus, and overlap history.
+- **Document Storage**: Local storage implementation with SHA-256 integrity verification, 10MB limit, file extension and magic byte validation, and UUID-based secure paths.
+
+### Known Gaps (Stage 5)
+1. **Audit Entries for Document Downloads**: Document downloads are authenticated and scope-checked, but audit-log event writes for sensitive case document downloads will be integrated in Stage 9 (Governance & Audit).
+2. **S3 Storage Implementation**: Prototype uses the local disk storage provider (`localStorage`); the S3 storage interface raises "not implemented in the prototype" as designed.
+
+---
+
 ## Known Limitations and Honest Claims
 
 | Claim | Reality |
@@ -226,9 +241,11 @@ Implementation proceeds from:
 | Embeddings | CPU inference via fastembed/ONNX — no GPU needed |
 | LLM explanations | Template-based (offline); LLM stub available for online mode |
 | Institution resolution | IDF+trigram blend; Splink upgrade is planned roadmap |
+| Document storage | Local disk storage with UUID mapping; S3 backend is stub |
 
 ---
 
 ## License
 
 Prototype for SIH 2026. All complaint data in this repository is synthetic.
+
