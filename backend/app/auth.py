@@ -59,8 +59,8 @@ def require_roles(*roles: str):
     return dep
 
 
-def scope_clause(user: dict) -> tuple[str, dict]:
+def scope_clause(user: dict, table_alias: str = "i") -> tuple[str, dict]:
     """Row-level scoping: regional officers see only their region's institutions."""
     if user["role"] == "regional" and user.get("region"):
-        return " AND i.region = :scope_region", {"scope_region": user["region"]}
+        return f" AND {table_alias}.region = :scope_region", {"scope_region": user["region"]}
     return "", {}
