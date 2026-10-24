@@ -182,6 +182,7 @@ def case_detail(case_id: int, db=Depends(get_db), user=Depends(current_user)):
             SELECT c.id, c.case_ref, c.category, c.status, c.received_date,
                    c.sla_due_date, c.closed_date, c.priority, c.sensitivity_flag,
                    c.hold_parallel, c.next_action, c.inst_match_conf, c.updated_at,
+                   c.description,
                    i.id AS institution_id, i.name AS institution,
                    i.aicte_permanent_id, i.city, i.region,
                    b.id AS bureau_id, b.code AS bureau, b.name AS bureau_name,
