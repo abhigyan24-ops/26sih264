@@ -1,164 +1,88 @@
-import json
-
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from typing import Literal
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from pydantic import BaseModel, field_validator
 from sqlalchemy import text
-
 from ..db import get_db
-from ..auth import current_user, scope_clause
+from ..auth import current_user
+from ..services.coordination import (DISMISS_REASONS, FIELDS, JOINS, overlap_scope,
+                                     get_overlap, decide_overlap)
 
-router = APIRouter(prefix="/api/overlaps", tags=["overlaps"])
-
-
-@router.get("")
-def list_overlaps(
-    status: str = "suggested",
-    level: str | None = None,
-    db=Depends(get_db),
-    user=Depends(current_user),
-):
-    sc, sp = scope_clause(user, table_alias="i")
-    where_clauses = ["l.status = :s"]
-    params = {"s": status}
-    if level:
-        where_clauses.append("l.level = :lvl")
-        params["lvl"] = level
-    if sc:
-        where_clauses.append(sc.replace("AND ", "", 1).strip())
-    params.update(sp)
-
-    where_sql = " AND ".join(where_clauses)
-    sql = f"""
-      SELECT l.id, l.level, l.probability, l.breakdown, l.status,
-             l.lead_bureau_id, l.explanation, l.explanation_src,
-             l.model_version, l.decision_reason,
-             i.id AS institution_id, i.name AS institution, i.region,
-             ca.id AS a_id, ca.case_ref AS a_ref, ca.category AS a_cat,
-             ba.code AS a_bureau, ca.description AS a_desc, ca.status AS a_status,
-             cb.id AS b_id, cb.case_ref AS b_ref, cb.category AS b_cat,
-             bb.code AS b_bureau, cb.description AS b_desc, cb.status AS b_status
-      FROM overlap_links l
-      JOIN cases ca ON ca.id=l.case_a
-      JOIN cases cb ON cb.id=l.case_b
-      JOIN institutions i ON i.id=ca.institution_id
-      JOIN bureaus ba ON ba.id=ca.bureau_id
-      JOIN bureaus bb ON bb.id=cb.bureau_id
-      WHERE {where_sql}
-      ORDER BY (l.level='high') DESC, l.probability DESC
-      LIMIT 100
-    """
-    return [dict(r) for r in db.execute(text(sql), params).mappings()]
+router = APIRouter(prefix="/api", tags=["overlaps"])
 
 
 class Decision(BaseModel):
-    decision: str                   # link | dismiss
-    lead_bureau: str | None = None  # bureau code for the lead
-    hold_other: bool = False        # set hold_parallel on the non-lead case
-    reason: str | None = None       # required for dismiss; optional for link
+    decision: Literal["link", "dismiss"]
+    lead_bureau: str | None = None
+    hold_other: bool = False
+    reason: str | None = None
+    note: str | None = None
+
+    @field_validator("reason", "note")
+    @classmethod
+    def trim(cls, value):
+        return value.strip() or None if value is not None else None
 
 
-@router.post("/{overlap_id}/decide")
-def decide(
-    overlap_id: int,
-    body: Decision,
-    db=Depends(get_db),
-    user=Depends(current_user),
-):
-    sc, sp = scope_clause(user, table_alias="i")
-    l = db.execute(
-        text(f"""
-            SELECT l.* FROM overlap_links l
-            JOIN cases ca ON ca.id=l.case_a
-            JOIN institutions i ON i.id=ca.institution_id
-            WHERE l.id=:i {sc}
-        """),
-        {"i": overlap_id, **sp},
-    ).mappings().first()
-    if not l:
-        raise HTTPException(404, "Overlap not found")
-    if l["status"] != "suggested":
-        raise HTTPException(422, "This overlap has already been decided")
+@router.get("/overlaps")
+def list_overlaps(response: Response,
+                  status: Literal["suggested", "confirmed", "dismissed"] = "suggested",
+                  level: Literal["high", "medium", "info"] | None = None,
+                  institution_id: int | None = None,
+                  limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0),
+                  db=Depends(get_db), user=Depends(current_user)):
+    scope, params = overlap_scope(user)
+    where = "l.status=:status" + scope
+    params["status"] = status
+    if level is not None:
+        where += " AND l.level=:level"
+        params["level"] = level
+    if institution_id is not None:
+        where += " AND ia.id=:institution"
+        params["institution"] = institution_id
+    response.headers["X-Total-Count"] = str(db.execute(
+        text(f"SELECT count(*) {JOINS} WHERE {where}"), params).scalar())
+    rows = db.execute(text(f"SELECT {FIELDS} {JOINS} WHERE {where} "
+                           "ORDER BY CASE l.level WHEN 'high' THEN 0 WHEN 'medium' THEN 1 ELSE 2 END, "
+                           "l.probability DESC, l.id LIMIT :limit OFFSET :offset"),
+                      {**params, "limit": limit, "offset": offset}).mappings()
+    return [dict(row) for row in rows]
 
-    if body.decision == "dismiss":
-        if not body.reason:
-            raise HTTPException(422, "A reason is required to dismiss an overlap")
-        db.execute(
-            text(
-                "UPDATE overlap_links SET status='dismissed', decided_by=:u, "
-                "decision_reason=:r WHERE id=:i"
-            ),
-            {"u": user["id"], "r": body.reason, "i": overlap_id},
-        )
 
-    elif body.decision == "link":
-        lead_bureau_id = None
-        if body.lead_bureau:
-            lead_bureau_id = db.execute(
-                text("SELECT id FROM bureaus WHERE code=:c"), {"c": body.lead_bureau}
-            ).scalar()
-            if not lead_bureau_id:
-                raise HTTPException(422, f"Unknown bureau: {body.lead_bureau}")
+@router.get("/overlaps/dismiss-reasons")
+def dismiss_reasons(user=Depends(current_user)):
+    return list(DISMISS_REASONS)
 
-        db.execute(
-            text(
-                "UPDATE overlap_links SET status='confirmed', lead_bureau_id=:b, "
-                "decided_by=:u, decision_reason=:r WHERE id=:i"
-            ),
-            {
-                "b": lead_bureau_id,
-                "u": user["id"],
-                "r": body.reason,
-                "i": overlap_id,
-            },
-        )
 
-        if body.hold_other and lead_bureau_id:
-            # Set hold_parallel on the case NOT owned by the lead bureau
-            db.execute(
-                text(
-                    "UPDATE cases SET hold_parallel=TRUE "
-                    "WHERE id IN (:a, :b) AND bureau_id<>:lead"
-                ),
-                {"a": l["case_a"], "b": l["case_b"], "lead": lead_bureau_id},
-            )
+@router.get("/overlaps/{overlap_id}")
+def overlap_detail(overlap_id: int, db=Depends(get_db), user=Depends(current_user)):
+    return get_overlap(db, user, overlap_id)
 
-        # Update timelines on BOTH cases
-        for cid in (l["case_a"], l["case_b"]):
-            db.execute(
-                text(
-                    "INSERT INTO actions "
-                    "(case_id, bureau_id, officer_id, action_type, remarks, meta) "
-                    "VALUES (:c, :b, :o, 'link', :r, CAST(:m AS jsonb))"
-                ),
-                {
-                    "c": cid,
-                    "b": user.get("bureau_id"),
-                    "o": user["id"],
-                    "r": body.reason or "Cases linked as related",
-                    "m": json.dumps(
-                        {
-                            "overlap_id": overlap_id,
-                            "lead": body.lead_bureau,
-                            "hold": body.hold_other,
-                        }
-                    ),
-                },
-            )
-    else:
-        raise HTTPException(422, "decision must be 'link' or 'dismiss'")
 
-    # Audit log
-    db.execute(
-        text(
-            "INSERT INTO audit_log (actor_id, action, entity, entity_id, detail) "
-            "VALUES (:u, :a, 'overlap', :i, CAST(:d AS jsonb))"
-        ),
-        {
-            "u": user["id"],
-            "a": body.decision,
-            "i": str(overlap_id),
-            "d": json.dumps(body.model_dump()),
-        },
-    )
-    db.commit()
-    return {"ok": True}
+@router.post("/overlaps/{overlap_id}/decide")
+def decide(overlap_id: int, body: Decision, db=Depends(get_db), user=Depends(current_user)):
+    try:
+        result = decide_overlap(db, user, overlap_id, body)
+        db.commit()
+        return result
+    except Exception:
+        db.rollback()
+        raise
+
+
+@router.get("/cases/{case_id}/overlaps")
+def case_overlaps(case_id: int, db=Depends(get_db), user=Depends(current_user)):
+    # Check case visibility even when it has no overlaps.
+    where = "c.id=:id"
+    params = {"id": case_id}
+    if user["role"] == "regional":
+        where += " AND i.region=:region"
+        params["region"] = user.get("region")
+    elif user["role"] == "officer":
+        where += " AND c.bureau_id=:bureau"
+        params["bureau"] = user.get("bureau_id")
+    if not db.execute(text("SELECT c.id FROM cases c JOIN institutions i ON i.id=c.institution_id WHERE " + where), params).first():
+        raise HTTPException(404, "Case not found")
+    scope, scoped = overlap_scope(user)
+    return [dict(row) for row in db.execute(
+        text(f"SELECT {FIELDS} {JOINS} WHERE (l.case_a=:id OR l.case_b=:id) {scope} "
+             "ORDER BY l.probability DESC, l.id"), {"id": case_id, **scoped}).mappings()]
