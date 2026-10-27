@@ -16,12 +16,17 @@ export default function LoginPage() {
     setError('')
     try {
       const { access_token } = await login(form.username, form.password)
+      if (!access_token) {
+        throw new Error('Backend is not reachable or did not return a valid session.')
+      }
       localStorage.setItem('token', access_token)
       const user = await me()
       localStorage.setItem('user', JSON.stringify(user))
       navigate('/')
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Invalid username or password')
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      setError(err.response?.data?.detail || err.message || 'Invalid username or password. Is the backend server running?')
     } finally {
       setLoading(false)
     }

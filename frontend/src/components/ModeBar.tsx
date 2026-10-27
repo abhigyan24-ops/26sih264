@@ -15,11 +15,11 @@ export default function ModeBar({ isAdmin }: { isAdmin: boolean }) {
   if (status.isPending) {
     return <span className="text-[11px] font-mono text-slate-500">Checking policy...</span>
   }
-  if (status.isError) {
+  if (status.isError || !status.data) {
     return <span role="alert" className="chip chip-danger font-mono text-[10px]">Policy unavailable</span>
   }
 
-  const modes = { global: status.data.global, ...status.data.capabilities }
+  const modes = { global: status.data?.global ?? 'offline', ...(status.data?.capabilities ?? {}) }
 
   return (
     <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-mono" aria-label="Privacy mode policy">
