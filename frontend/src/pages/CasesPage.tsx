@@ -180,7 +180,7 @@ export default function CasesPage() {
           <button
             ref={registerBtnRef}
             onClick={() => setIsRegisterOpen(true)}
-            className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium text-sm flex items-center gap-2 shadow-lg shadow-blue-600/20 transition-all active:scale-95"
+            className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-500 text-white font-medium text-sm flex items-center gap-2 shadow-lg shadow-blue-600/20 transition-all active:scale-95"
           >
             <Plus size={16} />
             Register Case
@@ -189,7 +189,7 @@ export default function CasesPage() {
       </div>
 
       {/* Filter Bar */}
-      <div className="glass rounded-xl p-4 space-y-3.5 border border-slate-800">
+      <div className="panel bg-slate-900 border border-slate-800 rounded p-4 space-y-3.5 border border-slate-800">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
             <Filter size={14} className="text-blue-400" />
@@ -216,7 +216,7 @@ export default function CasesPage() {
               value={q}
               onChange={(e) => updateParam('q', e.target.value)}
               placeholder="Search case ID, description..."
-              className="w-full bg-slate-900/80 border border-slate-800 rounded-lg pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full bg-slate-900/80 border border-slate-800 rounded pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
 
@@ -228,7 +228,7 @@ export default function CasesPage() {
               value={institution}
               onChange={(e) => updateParam('institution', e.target.value)}
               placeholder="Institution name..."
-              className="w-full bg-slate-900/80 border border-slate-800 rounded-lg pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full bg-slate-900/80 border border-slate-800 rounded pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
 
@@ -239,7 +239,7 @@ export default function CasesPage() {
               value={aicte_id}
               onChange={(e) => updateParam('aicte_id', e.target.value)}
               placeholder="AICTE ID (e.g. 1-1234567)"
-              className="w-full bg-slate-900/80 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
+              className="w-full bg-slate-900/80 border border-slate-800 rounded px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
             />
           </div>
 
@@ -248,7 +248,7 @@ export default function CasesPage() {
             <select
               value={bureau}
               onChange={(e) => updateParam('bureau', e.target.value)}
-              className="w-full bg-slate-900/80 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full bg-slate-900/80 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
               <option value="">All Bureaus / Cells</option>
               {meta?.bureaus?.map((b) => (
@@ -261,7 +261,7 @@ export default function CasesPage() {
 
           {/* Region (Hidden if user is regional) */}
           {isRegional ? (
-            <div className="flex items-center px-3 py-2 rounded-lg bg-slate-800/40 border border-slate-800 text-xs text-slate-400">
+            <div className="flex items-center px-3 py-2 rounded bg-slate-800/40 border border-slate-800 text-xs text-slate-400">
               Region:&nbsp;<span className="text-white font-medium">{user?.region}</span>
               <span className="ml-auto text-[10px] text-slate-500">(Fixed scope)</span>
             </div>
@@ -270,7 +270,7 @@ export default function CasesPage() {
               <select
                 value={region}
                 onChange={(e) => updateParam('region', e.target.value)}
-                className="w-full bg-slate-900/80 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full bg-slate-900/80 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
                 <option value="">All Regions</option>
                 {meta?.regions?.map((r) => (
@@ -287,7 +287,7 @@ export default function CasesPage() {
             <select
               value={category}
               onChange={(e) => updateParam('category', e.target.value)}
-              className="w-full bg-slate-900/80 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full bg-slate-900/80 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
               <option value="">All Categories</option>
               {meta?.categories?.map((c) => (
@@ -303,7 +303,7 @@ export default function CasesPage() {
             <select
               value={status}
               onChange={(e) => updateParam('status', e.target.value)}
-              className="w-full bg-slate-900/80 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full bg-slate-900/80 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
               <option value="">All Statuses</option>
               {meta?.statuses?.map((s) => (
@@ -322,7 +322,7 @@ export default function CasesPage() {
                 value={date_from}
                 onChange={(e) => updateParam('date_from', e.target.value)}
                 aria-label="Date from"
-                className="w-full bg-slate-900/80 border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full bg-slate-900/80 border border-slate-800 rounded px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
             <span className="text-slate-500 text-xs">to</span>
@@ -332,7 +332,7 @@ export default function CasesPage() {
                 value={date_to}
                 onChange={(e) => updateParam('date_to', e.target.value)}
                 aria-label="Date to"
-                className="w-full bg-slate-900/80 border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full bg-slate-900/80 border border-slate-800 rounded px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
           </div>
@@ -359,7 +359,7 @@ export default function CasesPage() {
       </div>
 
       {/* Table Section */}
-      <div className="glass rounded-xl border border-slate-800 overflow-hidden shadow-lg">
+      <div className="panel bg-slate-900 border border-slate-800 rounded border border-slate-800 overflow-hidden shadow-lg">
         {isLoading ? (
           <div className="p-8 space-y-4">
             <div className="flex items-center justify-center gap-3 text-slate-400 text-sm py-8">
@@ -378,7 +378,7 @@ export default function CasesPage() {
             </p>
             <button
               onClick={() => refetch()}
-              className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs font-medium transition-colors"
+              className="px-4 py-2 rounded bg-slate-800 hover:bg-slate-700 text-white text-xs font-medium transition-colors"
             >
               Retry
             </button>
@@ -395,7 +395,7 @@ export default function CasesPage() {
             {activeFilterCount > 0 && (
               <button
                 onClick={handleResetFilters}
-                className="mt-2 px-4 py-1.5 rounded-lg bg-blue-600/20 text-blue-400 border border-blue-500/30 hover:bg-blue-600/30 text-xs font-medium transition-colors"
+                className="mt-2 px-4 py-1.5 rounded bg-blue-600/20 text-blue-400 border border-blue-500/30 hover:bg-blue-600/30 text-xs font-medium transition-colors"
               >
                 Reset Filters
               </button>

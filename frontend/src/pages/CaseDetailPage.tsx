@@ -236,7 +236,7 @@ export default function CaseDetailPage() {
   if (isError || !c) {
     const is404 = (error as any)?.response?.status === 404
     return (
-      <div className="p-6 max-w-2xl mx-auto my-12 text-center space-y-4 glass rounded-2xl border border-slate-800">
+      <div className="p-6 max-w-2xl mx-auto my-12 text-center space-y-4 panel bg-slate-900 border border-slate-800 rounded border border-slate-800">
         <div className="inline-flex p-3 rounded-full bg-slate-800/80 text-slate-400">
           <AlertOctagon size={32} />
         </div>
@@ -251,7 +251,7 @@ export default function CaseDetailPage() {
         <div className="pt-2">
           <Link
             to="/cases"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm font-medium text-white transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded bg-slate-800 hover:bg-slate-700 text-sm font-medium text-white transition-colors"
           >
             <ArrowLeft size={16} />
             Back to Cases
@@ -276,7 +276,7 @@ export default function CaseDetailPage() {
 
       {/* Review needed banner (FD10) */}
       {(navState?.institution_review_needed || c.inst_match_conf < 0.8) && (
-        <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center gap-2.5">
+        <div className="p-3.5 rounded bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center gap-2.5">
           <AlertTriangle size={16} className="text-amber-400 shrink-0" />
           <span>
             <strong>Institution Match Notice:</strong> Match confidence is{' '}
@@ -286,7 +286,7 @@ export default function CaseDetailPage() {
       )}
 
       {/* FD5: Header Card */}
-      <div className="glass rounded-2xl p-6 border border-slate-800 space-y-4 shadow-xl">
+      <div className="panel bg-slate-900 border border-slate-800 rounded p-6 border border-slate-800 space-y-4 shadow-xl">
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
           <div className="space-y-1.5">
             <div className="flex items-center gap-2.5 flex-wrap">
@@ -377,7 +377,7 @@ export default function CaseDetailPage() {
           <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
             Complaint Description
           </div>
-          <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 text-xs sm:text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">
+          <div className="p-3.5 rounded bg-slate-900/80 border border-slate-800 text-xs sm:text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">
             {c.description || 'No description provided.'}
           </div>
         </div>
@@ -385,7 +385,7 @@ export default function CaseDetailPage() {
 
       {/* FD6: Pre-action Banner */}
       {activeSiblings.length > 0 && (
-        <div className="p-4 rounded-xl bg-blue-950/40 border border-blue-500/30 text-blue-200 text-xs space-y-2.5">
+        <div className="p-4 rounded bg-blue-950/40 border border-blue-500/30 text-blue-200 text-xs space-y-2.5">
           <div className="flex items-center gap-2 font-semibold text-sm text-blue-300">
             <Info size={16} className="text-blue-400 shrink-0" />
             <span>
@@ -403,7 +403,7 @@ export default function CaseDetailPage() {
               <Link
                 key={sib.id}
                 to={`/cases/${sib.id}`}
-                className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-blue-900/50 hover:bg-blue-800/60 border border-blue-700/50 text-blue-200 transition-colors"
+                className="inline-flex items-center gap-2 px-2.5 py-1 rounded bg-blue-900/50 hover:bg-blue-800/60 border border-blue-700/50 text-blue-200 transition-colors"
               >
                 <span className="font-mono font-medium text-white">{sib.case_ref}</span>
                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-950 font-mono text-blue-300">
@@ -428,7 +428,7 @@ export default function CaseDetailPage() {
 
       {/* F-D3: Under pre-action banner, Possible overlaps (n) chips */}
       {overlaps.length > 0 && (
-        <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2.5">
+        <div className="p-4 rounded bg-slate-900/90 border border-slate-800 space-y-2.5">
           <div className="flex items-center justify-between text-xs">
             <div className="flex items-center gap-2 font-medium text-slate-300">
               <AlertTriangle size={15} className="text-amber-400 shrink-0" />
@@ -442,7 +442,7 @@ export default function CaseDetailPage() {
               <Link
                 key={o.id}
                 to={`/cases/${o.other_case_id}`}
-                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-mono border transition-all ${
+                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded text-xs font-mono border transition-all ${
                   o.level === 'high'
                     ? 'bg-rose-950/40 border-rose-500/30 text-rose-300 hover:bg-rose-900/50'
                     : o.level === 'medium'
@@ -481,7 +481,7 @@ export default function CaseDetailPage() {
         {/* Left Column (2/3 width) */}
         <div className="lg:col-span-2 space-y-6">
           {/* FD7: Timeline */}
-          <div className="glass rounded-2xl p-6 border border-slate-800 space-y-4">
+          <div className="panel bg-slate-900 border border-slate-800 rounded p-6 border border-slate-800 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h2 className="text-base font-semibold text-white flex items-center gap-2">
                 <Clock size={16} className="text-blue-400" />
@@ -557,7 +557,7 @@ export default function CaseDetailPage() {
                       </div>
 
                       {act.remarks && (
-                        <p className="text-xs text-slate-300 bg-slate-900/60 p-2.5 rounded-lg border border-slate-800/80 leading-relaxed whitespace-pre-wrap">
+                        <p className="text-xs text-slate-300 bg-slate-900/60 p-2.5 rounded border border-slate-800/80 leading-relaxed whitespace-pre-wrap">
                           {act.remarks}
                         </p>
                       )}
@@ -588,21 +588,21 @@ export default function CaseDetailPage() {
           </div>
 
           {/* FD8: Add-Action Form */}
-          <div className="glass rounded-2xl p-6 border border-slate-800 space-y-4">
+          <div className="panel bg-slate-900 border border-slate-800 rounded p-6 border border-slate-800 space-y-4">
             <h2 className="text-base font-semibold text-white flex items-center gap-2">
               <CornerDownRight size={16} className="text-blue-400" />
               Record Case Action / Movement
             </h2>
 
             {successMessage && (
-              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
+              <div className="p-3 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
                 <CheckCircle2 size={16} />
                 <span>{successMessage}</span>
               </div>
             )}
 
             {actionMutation.isError && (
-              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2">
+              <div className="p-3 rounded bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2">
                 <AlertTriangle size={16} className="shrink-0 mt-0.5" />
                 <div className="flex-1">
                   <span>{(actionMutation.error as any)?.message || 'Action failed.'}</span>
@@ -630,7 +630,7 @@ export default function CaseDetailPage() {
                   <select
                     value={actionType}
                     onChange={(e) => handleActionTypeChange(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                   >
                     {isDisposed ? (
                       <>
@@ -663,7 +663,7 @@ export default function CaseDetailPage() {
                       onChange={(e) => setTransferTo(e.target.value)}
                       className={`w-full bg-slate-900 border ${
                         formErrors.transfer_to ? 'border-rose-500' : 'border-slate-700'
-                      } rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500`}
+                      } rounded px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500`}
                     >
                       <option value="">Select destination bureau...</option>
                       {meta?.bureaus
@@ -687,7 +687,7 @@ export default function CaseDetailPage() {
                       value={newStatus}
                       onChange={(e) => setNewStatus(e.target.value)}
                       disabled={actionType === 'reopened'}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+                      className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
                     >
                       <option value="">Keep current status ({c.status})</option>
                       {meta?.statuses?.map((s) => (
@@ -713,7 +713,7 @@ export default function CaseDetailPage() {
                   placeholder="Record summary of action, hearing decision, observation..."
                   className={`w-full bg-slate-900 border ${
                     formErrors.remarks ? 'border-rose-500' : 'border-slate-700'
-                  } rounded-lg px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500`}
+                  } rounded px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500`}
                 />
                 <div className="flex justify-between items-center text-[10px] text-slate-500 mt-1">
                   <span>{remarks.length} / 2,000 characters</span>
@@ -734,7 +734,7 @@ export default function CaseDetailPage() {
                   type="file"
                   onChange={handleFileChange}
                   accept=".pdf,.png,.jpg,.jpeg,.docx,.txt"
-                  className="block w-full text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-slate-800 file:text-slate-200 hover:file:bg-slate-700 cursor-pointer"
+                  className="block w-full text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-slate-800 file:text-slate-200 hover:file:bg-slate-700 cursor-pointer"
                 />
                 {fileError && <p className="text-rose-400 text-[11px] mt-1">{fileError}</p>}
                 {selectedFile && !fileError && (
@@ -749,7 +749,7 @@ export default function CaseDetailPage() {
                 <button
                   type="submit"
                   disabled={actionMutation.isPending || !!fileError}
-                  className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium text-xs flex items-center gap-2 shadow-lg shadow-blue-600/20 transition-all"
+                  className="px-5 py-2 rounded bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium text-xs flex items-center gap-2 shadow-lg shadow-blue-600/20 transition-all"
                 >
                   {actionMutation.isPending ? (
                     <>
@@ -770,7 +770,7 @@ export default function CaseDetailPage() {
 
         {/* Right Column (1/3 width): Overlap Panel */}
         <div className="space-y-4">
-          <div className="glass rounded-2xl p-5 border border-slate-800 space-y-3.5">
+          <div className="panel bg-slate-900 border border-slate-800 rounded p-5 border border-slate-800 space-y-3.5">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="text-sm font-semibold text-white flex items-center gap-2">
                 <AlertTriangle size={15} className="text-orange-400" />
@@ -791,7 +791,7 @@ export default function CaseDetailPage() {
                 {overlaps.map((o) => (
                   <div
                     key={o.id}
-                    className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2 text-xs"
+                    className="p-3 rounded bg-slate-900/80 border border-slate-800 space-y-2 text-xs"
                   >
                     <div className="flex items-center justify-between">
                       <span

@@ -2,23 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── AICTE CaseNexus: Quiet Government Dashboard Tokens ────────────────────── */
+
 @layer base {
   :root {
-    --bg-primary: #0a0f1e;
-    --bg-secondary: #0d1528;
-    --bg-card: #111827;
-    --bg-card-hover: #1a2234;
-    --border: #1e2d4a;
-    --border-bright: #2a3f63;
-    --accent-blue: #3b82f6;
-    --accent-cyan: #06b6d4;
-    --accent-purple: #8b5cf6;
-    --accent-emerald: #10b981;
-    --accent-amber: #f59e0b;
-    --accent-rose: #f43f5e;
-    --text-primary: #f1f5f9;
+    --bg-primary: #090d16;
+    --bg-panel: #0e1526;
+    --bg-panel-elevated: #141d33;
+    --bg-row-hover: #17223b;
+    --border-subtle: #1e293b;
+    --border-default: #2a374f;
+    --border-strong: #3d4f70;
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --text-primary: #f8fafc;
     --text-secondary: #94a3b8;
-    --text-muted: #475569;
+    --text-muted: #64748b;
   }
 
   * {
@@ -26,149 +25,164 @@
   }
 
   body {
-    font-family: 'Inter', system-ui, sans-serif;
-    background: var(--bg-primary);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: var(--bg-primary);
     color: var(--text-primary);
     min-height: 100vh;
     overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Accessible focus indicators across all interactive elements */
+  :focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 1px;
   }
 
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
-  ::-webkit-scrollbar-track { background: var(--bg-secondary); }
-  ::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
-  ::-webkit-scrollbar-thumb:hover { background: var(--accent-blue); }
+  ::-webkit-scrollbar-track {
+    background: #090d16;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1e293b;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #334155;
+  }
 }
 
 @layer components {
-  .glass {
-    background: rgba(17, 24, 39, 0.8);
-    backdrop-filter: blur(12px);
-    border: 1px solid var(--border);
+  /* Solid operational containers replacing glassmorphism */
+  .panel {
+    background-color: var(--bg-panel);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
   }
 
-  .glass-hover {
-    transition: all 0.2s ease;
-  }
-  .glass-hover:hover {
-    background: rgba(26, 34, 52, 0.9);
-    border-color: var(--border-bright);
-    transform: translateY(-1px);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  .panel-header {
+    background-color: var(--bg-panel-elevated);
+    border-bottom: 1px solid var(--border-subtle);
+    padding: 0.75rem 1rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.025em;
+    color: #e2e8f0;
   }
 
+  /* High-density operational buttons */
   .btn-primary {
-    @apply bg-blue-600 hover:bg-blue-500 text-white font-medium px-4 py-2 rounded-lg
-           transition-all duration-200 hover:shadow-lg hover:shadow-blue-500/25 active:scale-95;
+    @apply inline-flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700
+           text-white text-xs font-medium px-3 py-1.5 rounded transition-colors
+           disabled:opacity-50 disabled:pointer-events-none;
   }
 
   .btn-secondary {
-    @apply bg-transparent border border-slate-600 hover:border-slate-400 text-slate-300
-           hover:text-white font-medium px-4 py-2 rounded-lg transition-all duration-200 active:scale-95;
+    @apply inline-flex items-center justify-center gap-1.5 bg-slate-900 border border-slate-700
+           hover:bg-slate-800 text-slate-200 text-xs font-medium px-3 py-1.5 rounded transition-colors
+           disabled:opacity-50 disabled:pointer-events-none;
   }
 
   .btn-danger {
-    @apply bg-rose-600/20 hover:bg-rose-600/40 border border-rose-600/40 hover:border-rose-500
-           text-rose-400 hover:text-rose-300 font-medium px-4 py-2 rounded-lg transition-all duration-200;
+    @apply inline-flex items-center justify-center gap-1.5 bg-rose-950/40 border border-rose-800
+           hover:bg-rose-900/60 text-rose-300 text-xs font-medium px-3 py-1.5 rounded transition-colors
+           disabled:opacity-50 disabled:pointer-events-none;
   }
 
-  .badge-high    { @apply bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs px-2 py-0.5 rounded-full; }
-  .badge-medium  { @apply bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs px-2 py-0.5 rounded-full; }
-  .badge-info    { @apply bg-blue-500/20 text-blue-300 border border-blue-500/30 text-xs px-2 py-0.5 rounded-full; }
-  .badge-success { @apply bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs px-2 py-0.5 rounded-full; }
-  .badge-muted   { @apply bg-slate-700/50 text-slate-400 border border-slate-600/30 text-xs px-2 py-0.5 rounded-full; }
+  /* Crisp status chips (compact, high-contrast, text + border) */
+  .chip {
+    @apply inline-flex items-center gap-1 text-[11px] font-mono font-medium px-2 py-0.5 rounded border;
+  }
 
-  .status-received    { @apply badge-muted; }
-  .status-registered  { @apply badge-info; }
-  .status-assigned    { @apply badge-info; }
-  .status-under_process { @apply bg-purple-500/20 text-purple-300 border border-purple-500/30 text-xs px-2 py-0.5 rounded-full; }
-  .status-escalated   { @apply badge-high; }
-  .status-action_taken { @apply badge-success; }
-  .status-disposed    { @apply badge-muted; }
-  .status-transferred { @apply badge-medium; }
-  .status-reopened    { @apply badge-medium; }
+  .chip-neutral {
+    @apply bg-slate-900 text-slate-300 border-slate-700;
+  }
 
-  .kpi-card {
-    @apply glass rounded-xl p-5 glass-hover cursor-default;
+  .chip-info {
+    @apply bg-blue-950/50 text-blue-300 border-blue-800/80;
+  }
+
+  .chip-warning {
+    @apply bg-amber-950/50 text-amber-300 border-amber-800/80;
+  }
+
+  .chip-danger {
+    @apply bg-rose-950/50 text-rose-300 border-rose-800/80;
+  }
+
+  .chip-success {
+    @apply bg-emerald-950/50 text-emerald-300 border-emerald-800/80;
+  }
+
+  /* Backwards compatibility aliases mapped to crisp chips */
+  .badge-high    { @apply chip chip-danger; }
+  .badge-medium  { @apply chip chip-warning; }
+  .badge-info    { @apply chip chip-info; }
+  .badge-success { @apply chip chip-success; }
+  .badge-muted   { @apply chip chip-neutral; }
+
+  .status-received      { @apply chip-neutral; }
+  .status-registered    { @apply chip-info; }
+  .status-assigned      { @apply chip-info; }
+  .status-under_process { @apply bg-sky-950/50 text-sky-300 border-sky-800/80; }
+  .status-escalated     { @apply chip-danger; }
+  .status-action_taken  { @apply chip-success; }
+  .status-disposed      { @apply chip-neutral; }
+  .status-transferred   { @apply chip-warning; }
+  .status-reopened      { @apply chip-warning; }
+
+  /* Dense operational tables */
+  .gov-table {
+    @apply w-full text-left text-xs border-collapse;
+  }
+
+  .gov-table th {
+    @apply sticky top-0 bg-slate-900/95 text-slate-300 font-semibold px-3 py-2 border-b border-slate-700
+           uppercase tracking-wider text-[11px];
+  }
+
+  .gov-table td {
+    @apply px-3 py-2 border-b border-slate-800/80 text-slate-200;
+  }
+
+  .gov-table tr:hover td {
+    background-color: var(--bg-row-hover);
   }
 
   .table-row {
-    @apply border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors duration-150;
+    @apply border-b border-slate-800/80 hover:bg-slate-800/60 transition-colors;
   }
 
-  .sidebar-link {
-    @apply flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-400 hover:text-white
-           hover:bg-white/5 transition-all duration-200 text-sm font-medium;
-  }
-  .sidebar-link.active {
-    @apply bg-blue-600/20 text-blue-300 border border-blue-600/20;
-  }
-
+  /* Standard form inputs */
   .input {
-    @apply w-full bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100
-           placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/40
-           transition-all duration-200;
+    @apply w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-xs text-slate-100
+           placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500
+           transition-colors;
   }
 
   .select {
     @apply input cursor-pointer;
   }
 
+  /* Operational card */
   .card {
-    @apply glass rounded-xl;
+    @apply panel;
   }
 
-  .overlap-bar {
-    @apply h-2 rounded-full bg-gradient-to-r from-blue-600 to-cyan-500;
+  .kpi-card {
+    @apply bg-slate-900 border border-slate-800 rounded p-3 transition-colors hover:border-slate-700;
   }
 
-  /* Animated gradient border for high-overlap cards */
-  .alert-high {
-    position: relative;
-    background: linear-gradient(135deg, rgba(244,63,94,0.1), rgba(251,113,133,0.05));
-    border: 1px solid rgba(244,63,94,0.3);
-  }
-  .alert-high::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    padding: 1px;
-    background: linear-gradient(135deg, rgba(244,63,94,0.5), rgba(251,113,133,0.2));
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    pointer-events: none;
+  .sidebar-link {
+    @apply flex items-center gap-2.5 px-3 py-1.5 rounded text-xs font-medium text-slate-400
+           hover:text-slate-100 hover:bg-slate-800/60 transition-colors;
   }
 
-  @keyframes pulse-slow {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
-  }
-  .animate-pulse-slow { animation: pulse-slow 2.5s ease-in-out infinite; }
-
-  @keyframes slide-up {
-    from { opacity: 0; transform: translateY(12px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  .animate-slide-up { animation: slide-up 0.3s ease-out; }
-
-  @keyframes fade-in {
-    from { opacity: 0; }
-    to   { opacity: 1; }
-  }
-  .animate-fade-in { animation: fade-in 0.25s ease-out; }
-
-  .gradient-text {
-    background: linear-gradient(135deg, #3b82f6, #06b6d4);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .hero-gradient {
-    background: linear-gradient(135deg, #1e3a5f 0%, #0a0f1e 50%, #1a1040 100%);
+  .sidebar-link.active {
+    @apply bg-blue-600/15 text-blue-300 border border-blue-500/30;
   }
 }

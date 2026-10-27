@@ -239,12 +239,12 @@ export default function RegisterCaseDialog({ open, onClose, triggerRef }: Regist
     >
       <div
         ref={modalRef}
-        className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/60">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400">
+            <div className="p-2 rounded bg-blue-500/10 text-blue-400">
               <Building2 size={20} />
             </div>
             <div>
@@ -261,7 +261,7 @@ export default function RegisterCaseDialog({ open, onClose, triggerRef }: Regist
           <button
             type="button"
             onClick={handleClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
             aria-label="Close dialog"
           >
             <X size={18} />
@@ -273,7 +273,7 @@ export default function RegisterCaseDialog({ open, onClose, triggerRef }: Regist
           /* ── F-D2: Post-Submission Result Panel ──────────────────────────────────────── */
           <div className="flex-1 overflow-y-auto p-6 space-y-5">
             {/* Success Summary Header */}
-            <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 flex items-start gap-3">
+            <div className="p-4 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 flex items-start gap-3">
               <CheckCircle2 size={22} className="shrink-0 text-emerald-400 mt-0.5" />
               <div>
                 <h3 className="font-semibold text-emerald-200">
@@ -288,7 +288,7 @@ export default function RegisterCaseDialog({ open, onClose, triggerRef }: Regist
             {/* Institution Match Confidence / Amber Banner */}
             {submissionResult.institution_match && (
               <div
-                className={`p-4 rounded-xl border text-xs space-y-1.5 ${
+                className={`p-4 rounded border text-xs space-y-1.5 ${
                   submissionResult.institution_match.needs_review ||
                   submissionResult.institution_review_needed
                     ? 'bg-amber-500/10 border-amber-500/30 text-amber-200'
@@ -328,7 +328,7 @@ export default function RegisterCaseDialog({ open, onClose, triggerRef }: Regist
 
             {/* Overlap Scan Error Warning (if any) */}
             {submissionResult.overlap_scan_error && (
-              <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
+              <div className="p-3.5 rounded bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
                 <AlertTriangle size={16} className="text-rose-400 shrink-0" />
                 <span>
                   <strong>Warning:</strong> {submissionResult.overlap_scan_error}
@@ -349,7 +349,7 @@ export default function RegisterCaseDialog({ open, onClose, triggerRef }: Regist
               </div>
 
               {!submissionResult.overlaps || submissionResult.overlaps.length === 0 ? (
-                <div className="p-6 text-center rounded-xl bg-slate-800/40 border border-slate-800 text-xs text-slate-400 space-y-1">
+                <div className="p-6 text-center rounded bg-slate-800/40 border border-slate-800 text-xs text-slate-400 space-y-1">
                   <p className="font-medium text-slate-300">No cross-case overlaps detected</p>
                   <p className="text-[11px] text-slate-500">
                     The complaint narrative and institution record do not trigger high or medium similarity flags.
@@ -360,7 +360,7 @@ export default function RegisterCaseDialog({ open, onClose, triggerRef }: Regist
                   {submissionResult.overlaps.map((o) => (
                     <div
                       key={o.id}
-                      className="p-3.5 rounded-xl bg-slate-800/70 border border-slate-700/70 space-y-2 text-xs"
+                      className="p-3.5 rounded bg-slate-800/70 border border-slate-700/70 space-y-2 text-xs"
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -406,7 +406,7 @@ export default function RegisterCaseDialog({ open, onClose, triggerRef }: Regist
               <button
                 type="button"
                 onClick={handleClose}
-                className="px-4 py-2 rounded-lg text-sm text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+                className="px-4 py-2 rounded text-sm text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
               >
                 Close
               </button>
@@ -416,7 +416,7 @@ export default function RegisterCaseDialog({ open, onClose, triggerRef }: Regist
                   handleClose()
                   navigate(`/cases/${submissionResult.id}`)
                 }}
-                className="px-5 py-2 rounded-lg text-sm font-medium bg-blue-600 hover:bg-blue-500 text-white flex items-center gap-2 transition-all shadow-lg shadow-blue-600/20"
+                className="px-5 py-2 rounded text-sm font-medium bg-blue-600 hover:bg-blue-500 text-white flex items-center gap-2 transition-all shadow-lg shadow-blue-600/20"
               >
                 <span>Go to Case Detail</span>
                 <ArrowRight size={15} />
@@ -427,7 +427,7 @@ export default function RegisterCaseDialog({ open, onClose, triggerRef }: Regist
           /* ── Registration Form ──────────────────────────────────────────────────────── */
           <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
             {serverError && (
-              <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-sm flex items-start gap-2.5">
+              <div className="p-3.5 rounded bg-rose-500/10 border border-rose-500/30 text-rose-300 text-sm flex items-start gap-2.5">
                 <AlertTriangle size={18} className="shrink-0 mt-0.5 text-rose-400" />
                 <div>
                   <p className="font-medium">Action Required</p>
@@ -451,7 +451,7 @@ export default function RegisterCaseDialog({ open, onClose, triggerRef }: Regist
 
               {selectedCandidate ? (
                 /* Selected candidate card */
-                <div className="p-3 rounded-lg bg-blue-950/30 border border-blue-500/40 flex items-center justify-between gap-3">
+                <div className="p-3 rounded bg-blue-950/30 border border-blue-500/40 flex items-center justify-between gap-3">
                   <div className="min-w-0">
                     <div className="text-sm font-medium text-white truncate">
                       {selectedCandidate.name}
@@ -493,7 +493,7 @@ export default function RegisterCaseDialog({ open, onClose, triggerRef }: Regist
                     placeholder="Type name (e.g. Government Engineering College)..."
                     className={`w-full bg-slate-800/80 border ${
                       errors.institution_name ? 'border-rose-500' : 'border-slate-700'
-                    } rounded-lg px-3.5 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                    } rounded px-3.5 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500`}
                   />
                   {isResolving && (
                     <div className="absolute right-3 top-2.5 text-slate-400">
@@ -509,7 +509,7 @@ export default function RegisterCaseDialog({ open, onClose, triggerRef }: Regist
 
               {/* Candidates dropdown: up to 5 with score */}
               {!selectedCandidate && showDropdown && candidates.length > 0 && (
-                <div className="mt-1.5 bg-slate-800/95 border border-slate-700 rounded-xl shadow-2xl max-h-56 overflow-y-auto divide-y divide-slate-700/60 z-20">
+                <div className="mt-1.5 bg-slate-800/95 border border-slate-700 rounded shadow-2xl max-h-56 overflow-y-auto divide-y divide-slate-700/60 z-20">
                   <div className="px-3 py-1.5 bg-slate-900/60 text-[11px] font-medium text-slate-400 flex items-center justify-between">
                     <span>Suggested Institutions ({candidates.length})</span>
                     <span>Click to confirm</span>
@@ -555,7 +555,7 @@ export default function RegisterCaseDialog({ open, onClose, triggerRef }: Regist
                   value={aicteId}
                   onChange={(e) => setAicteId(e.target.value)}
                   placeholder="1-XXXXXXXX"
-                  className="w-full bg-slate-800/80 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-slate-800/80 border border-slate-700 rounded px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>
@@ -567,7 +567,7 @@ export default function RegisterCaseDialog({ open, onClose, triggerRef }: Regist
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   placeholder="e.g. Pune"
-                  className="w-full bg-slate-800/80 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-slate-800/80 border border-slate-700 rounded px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>
@@ -581,7 +581,7 @@ export default function RegisterCaseDialog({ open, onClose, triggerRef }: Regist
                 <select
                   value={bureauCode}
                   onChange={(e) => setBureauCode(e.target.value)}
-                  className="w-full bg-slate-800/80 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-slate-800/80 border border-slate-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   {meta?.bureaus?.map((b) => (
                     <option key={b.code} value={b.code}>
@@ -597,7 +597,7 @@ export default function RegisterCaseDialog({ open, onClose, triggerRef }: Regist
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="w-full bg-slate-800/80 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-slate-800/80 border border-slate-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   {meta?.categories?.map((c) => (
                     <option key={c.code} value={c.code}>
@@ -617,7 +617,7 @@ export default function RegisterCaseDialog({ open, onClose, triggerRef }: Regist
                 <select
                   value={priority}
                   onChange={(e) => setPriority(e.target.value)}
-                  className="w-full bg-slate-800/80 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-slate-800/80 border border-slate-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="normal">Normal</option>
                   <option value="high">High</option>
@@ -657,7 +657,7 @@ export default function RegisterCaseDialog({ open, onClose, triggerRef }: Regist
                 placeholder="Detail the complaint allegations, facts, affected courses or faculty..."
                 className={`w-full bg-slate-800/80 border ${
                   errors.description ? 'border-rose-500' : 'border-slate-700'
-                } rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                } rounded px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500`}
               />
               {errors.description && (
                 <p className="text-xs text-rose-400 mt-1">{errors.description}</p>
@@ -670,14 +670,14 @@ export default function RegisterCaseDialog({ open, onClose, triggerRef }: Regist
                 type="button"
                 onClick={handleClose}
                 disabled={createMutation.isPending}
-                className="px-4 py-2 rounded-lg text-sm text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+                className="px-4 py-2 rounded text-sm text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={createMutation.isPending}
-                className="px-5 py-2 rounded-lg text-sm font-medium bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white flex items-center gap-2 transition-all shadow-lg shadow-blue-600/20"
+                className="px-5 py-2 rounded text-sm font-medium bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white flex items-center gap-2 transition-all shadow-lg shadow-blue-600/20"
               >
                 {createMutation.isPending ? (
                   <>
