@@ -1,0 +1,4 @@
+case_no,college_name,city,complaint_details,category,severity
+RB-SAMPLE-01,"Netaji Subhas Institute of Technology, Lucknow",Lucknow,"Senior students in mechanical engineering hostel have subjected first year students to physical and mental harassment during late hours.",RAGGING,high
+RB-SAMPLE-02,"Visvesvaraya Institute of Technology, Coimbatore",Coimbatore,"Management demands unapproved development fee of Rs 45000 per semester without valid receipt.",FEES,normal
+RB-SAMPLE-03,"Aryabhatta Institute of Technology, Coimbatore",Coimbatore,"Faculty listed on AICTE portal are ghost faculty who never take lectures; majority of sanctioned posts vacant.",FACULTY,high

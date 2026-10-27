@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
-from .routers import auth, cases, institutions, overlaps, alerts, reports, admin, meta, documents, sla, privacy, evaluation
+from .routers import auth, cases, institutions, overlaps, alerts, reports, admin, meta, documents, sla, privacy, evaluation, ingestion
 
 logger = logging.getLogger("aicte")
 
@@ -39,7 +39,7 @@ app.add_middleware(
     expose_headers=["X-Total-Count"],  # BD4: let browser JS read pagination total
 )
 
-for r in (auth, cases, institutions, overlaps, alerts, reports, admin, meta, documents, sla, privacy, evaluation):
+for r in (auth, cases, institutions, overlaps, alerts, reports, admin, meta, documents, sla, privacy, evaluation, ingestion):
     app.include_router(r.router)
 
 

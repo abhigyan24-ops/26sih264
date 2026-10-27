@@ -15,6 +15,7 @@ import {
   Shield,
   Search,
   BarChart3,
+  Upload,
 } from 'lucide-react'
 import { getAlerts, searchInstitutions, me, logout } from '../lib/api'
 
@@ -35,6 +36,7 @@ const NAV_GROUPS: { group: string; items: NavItem[] }[] = [
       { to: '/cases', icon: FileText, label: 'Grievance Cases' },
       { to: '/overlaps', icon: Link2, label: 'Review Overlaps' },
       { to: '/alerts', icon: Bell, label: 'Alerts & Actions', badge: true },
+      { to: '/import', icon: Upload, label: 'Data Ingestion' },
     ],
   },
   {

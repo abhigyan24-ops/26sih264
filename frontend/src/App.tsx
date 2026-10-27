@@ -9,6 +9,7 @@ import InstitutionPage from './pages/InstitutionPage'
 import AlertsPage from './pages/AlertsPage'
 import ReportsPage from './pages/ReportsPage'
 import AdminPage from './pages/AdminPage'
+import ImportPage from './pages/Import'
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem('token')
@@ -28,10 +29,10 @@ export default function App() {
         <Route path="institutions/:id" element={<InstitutionPage />} />
         <Route path="alerts" element={<AlertsPage />} />
         <Route path="reports" element={<ReportsPage />} />
+        <Route path="import" element={<ImportPage />} />
         <Route path="admin" element={<AdminPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }
-

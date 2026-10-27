@@ -1,0 +1,4 @@
+grievance_id,institution,city,grievance_description,category,priority
+PGRC-SAMPLE-01,"Netaji Subhas Institute of Technology, Lucknow",Lucknow,"First year students in hostel report recurring hazing and intimidation incidents by senior batches.",RAGGING,high
+PGRC-SAMPLE-02,"Dr. Ambedkar Institute of Technology, Bengaluru",Bengaluru,"College administration is withholding original degree and mark sheets despite complete clearance of dues.",CERTIFICATE,normal
+PGRC-SAMPLE-03,"Homi Bhabha Institute of Technology, Lucknow",Lucknow,"Prescribed student-to-faculty ratio violated; classes combined for over 180 students in single room.",FACULTY,normal
