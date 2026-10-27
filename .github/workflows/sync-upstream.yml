@@ -1,0 +1,42 @@
+name: Sync Upstream
+
+on:
+  schedule:
+    # Automatically sync every 2 hours
+    - cron: '0 */2 * * *'
+  workflow_dispatch: # Allows manual trigger from the GitHub Actions tab
+
+jobs:
+  sync:
+    name: Sync with Upstream
+    runs-on: ubuntu-latest
+    # Only run on forks/mirrors, not on the upstream repository itself
+    if: github.repository != 'abhigyan24-ops/26sih264'
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Add upstream remote
+        run: |
+          git remote add upstream https://github.com/abhigyan24-ops/26sih264.git
+
+      - name: Fetch and Merge Upstream
+        run: |
+          git fetch upstream main --tags
+          git checkout main
+          git merge --ff-only upstream/main || git merge --no-edit upstream/main
+
+      - name: Push to fork
+        run: |
+          git push origin main --tags
