@@ -35,7 +35,7 @@ export default function Layout() {
   const { data: alerts = [] } = useQuery({
     queryKey: ['alerts', 'unread'],
     queryFn: () => getAlerts(true),
-    refetchInterval: 30_000,
+    refetchInterval: 15_000,
   })
   const unread = alerts.length
   // END ALERT BADGE SLOT (T20)
@@ -159,6 +159,20 @@ export default function Layout() {
                 This space is reserved for the offline/online mode bar added in Stage 9.
                 Do NOT render any mode or connectivity status here until Stage 9.
             ──────────────────────────────────────────────────────────────── */}
+
+            {/* Header Bell Notification Icon (T20) */}
+            <NavLink
+              to="/alerts"
+              className="relative p-2 text-slate-400 hover:text-slate-200 transition-colors rounded-lg hover:bg-slate-800/50"
+              title="Alerts"
+            >
+              <Bell size={16} />
+              {unread > 0 && (
+                <span className="absolute top-1 right-1 w-4 h-4 bg-rose-500 text-white font-bold text-[9px] flex items-center justify-center rounded-full animate-pulse">
+                  {unread > 99 ? '99+' : unread}
+                </span>
+              )}
+            </NavLink>
 
             {/* User info in top bar */}
             <div className="hidden md:flex flex-col items-end text-right">
