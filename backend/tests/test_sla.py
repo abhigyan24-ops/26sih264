@@ -44,6 +44,9 @@ def isolated():
 def test_scan_sla_and_deduplication(isolated):
     client, db = isolated
 
+    # Clear today's SLA alerts to ensure isolation if worker already executed today
+    db.execute(text("DELETE FROM alerts WHERE kind IN ('sla_risk', 'sla_breach', 'escalation') AND created_at >= CURRENT_DATE"))
+
     # First scan
     res1 = scan_sla(db)
     assert "created" in res1

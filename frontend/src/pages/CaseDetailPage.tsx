@@ -1,4 +1,5 @@
 import CaseReviewLinks from '../components/overlap/CaseReviewLinks'
+import CaseRiskBadge from '../components/sla/CaseRiskBadge'
 // src/pages/CaseDetailPage.tsx — FD5 to FD8
 import { useState, useRef } from 'react'
 import { useParams, Link, useLocation } from 'react-router-dom'
@@ -365,6 +366,7 @@ export default function CaseDetailPage() {
             </div>
             <div className="flex items-center gap-1.5 mt-0.5">
               <SlaBadge daysRemaining={c.days_remaining} closed={!!c.closed_date} />
+              <CaseRiskBadge caseId={c.id} closed={!!c.closed_date} />
               <span className="text-slate-300">{formatDate(c.sla_due_date)}</span>
             </div>
           </div>
