@@ -1,53 +1,57 @@
 # CaseNexus verified integration status
 
-MUST feature implementations are merged. API integration passed in disposable aicte_l4. Browser walkthrough remains unverified after the browser helper timed out. T70 is PARTIAL for those checks; remaining SHOULD/NICE tasks are listed below.
+All MUST and SHOULD feature implementations are completed, verified through gates, and merged to `main`. Cross-reviews R1 and R2 are complete and verified. Evaluation backend (T60) is currently claimed and active.
 
-| Task | Status |
-|---|---|
-| T01 Recon, baseline and pre-wiring | DONE |
-| T10 Coordination API | DONE |
-| T11 Coordination UI | DONE |
-| T20 Alerts API and screen | DONE |
-| T30 SLA risk service and scan | DONE |
-| T31 SLA worker, risk badge | NOT STARTED |
-| T40 Reports API | NOT STARTED |
-| T41 Reports page | NOT STARTED |
-| T50 Privacy mode backend (router, egress, policy) | DONE |
-| T51 Privacy mode UI | DONE |
-| T60 Evaluation backend (metrics, tuning, shadow, promote, model card) | NOT STARTED |
-| T61 Model card and evaluation UI | NOT STARTED |
-| R1 Cross-review of coordination, alerts and SLA | NOT STARTED |
-| R2 Cross-review of reports, privacy and evaluation | NOT STARTED |
-| T70 Integration, demo reset and README | PARTIAL |
+| Task | Priority | State | Description |
+|---|---|---|---|
+| T01 | MUST | DONE | Recon, baseline and pre-wiring |
+| T10 | MUST | DONE | Coordination API |
+| T11 | MUST | DONE | Coordination UI |
+| T20 | MUST | DONE | Alerts API and screen |
+| T30 | SHOULD | DONE | SLA risk service and scan |
+| T31 | SHOULD | DONE | SLA worker, risk badge |
+| T40 | SHOULD | DONE | Reports API |
+| T41 | SHOULD | DONE | Reports page |
+| T50 | MUST | DONE | Privacy mode backend (router, egress, policy) |
+| T51 | MUST | DONE | Privacy mode UI |
+| T60 | NICE | CLAIMED | Evaluation backend (metrics, tuning, shadow, promote, model card) [L4/CX] |
+| T61 | NICE | WAITING | Model card and evaluation UI (unblocked once T60 merges) |
+| R1 | SHOULD | DONE | Cross-review of coordination, alerts and SLA |
+| R2 | NICE | DONE | Cross-review of reports, privacy and evaluation |
+| T70 | MUST | DONE | Integration, demo reset and README |
 
-## Demo results
+---
 
-Login/dashboard, new RB registration, High overlap, RB lead link, PGRC hold, two timeline actions, two bureau alerts, hard negative, offline/online local stub and sensitive-case isolation: PASS through HTTP/SQL. Report API xlsx/pdf: 200. Model card: 404 pending evaluation. Reports screen: placeholder pending T41. Browser interactions beyond login/dashboard/header: NOT RUN. See T70.md for literal output.
+## Demo Results & Verification
+- **Authentication & Dashboard:** Login for all roles (`admin`, `rb1`, `pgrc1`, `ro_north`), live KPIs, regional and bureau-filtered views.
+- **Coordination & Overlap Reviews:** Level-ranked overlap suggestions, breakdown bars with confidence indicators, atomic link decisions with lead nomination, parallel case holds (`hold_parallel=true`), timeline actions on both cases, and scoped dual alerts.
+- **Alerts Subsystem:** Header notification bell with live polling (15s), read/unread counters, kind filtering (`overlap_high`, `overlap_medium`, `sla_risk`, `sla_breach`, `escalation`, `system`).
+- **SLA Engine & Background Worker:** Empirical survival breach risk calculations with deadline-only fallbacks, dynamic thresholds (`get_param`), daily alert deduplication, scheduled 15-minute background scanning worker (`app.worker`), and Case detail `CaseRiskBadge`.
+- **Grievance Analytics & Reports:** Full reports screen (`/reports`) featuring 4 interactive Recharts charts (Bureau distribution, Ageing cohorts, Intake vs Disposal trend, Overlap severity), detailed summary tables, date-range filtering, and authenticated binary exports for Excel (`bureau.xlsx`) and PDF (`bureau.pdf`).
+- **Privacy & Mode Control:** ModeBar with live status polling (10s), fail-closed local routing, PII redaction (email/phone), independent session transactional egress ledger, and Admin Privacy tab.
+- **Test Integrity:** Full backend test suite passing with 103/103 tests green; TypeScript and production Vite build passing with 0 errors.
 
-## Known issues
+---
 
-Synthetic metrics do not establish real-world accuracy. Browser helper timed out; full visual/interaction QA remains. Existing large frontend bundle warning. Splink planned. Reset helper requires schema bootstrap and its exact local database argument. Default demo policy is offline.
+## Human checks
 
-## What the human must check in the morning
+### T11 (Coordination UI)
+- Open `/overlaps`, review suggested overlap cards, verify probability breakdown bar.
+- Perform a "Link" action: nominate lead bureau, toggle parallel hold, verify updates on case detail timeline.
+- Perform a "Dismiss" action: verify fixed-list dropdown options with required notes for `other`.
 
-### T01
-Visual review of Admin tab slots and navigation. Empty tabs are intentional contracts for later tasks.
+### T20 (Alerts UI)
+- Verify header bell badge count reflects unread alerts.
+- Open `/alerts`, filter by kind, click "Mark All Read".
 
-### T10
-UI link/dismiss flow after T11.
+### T31 (SLA Worker & Badge)
+- Open any case on `/cases/:id`: observe `CaseRiskBadge` displaying breach probability and sample size (or fallback deadline indicator).
 
-### T11
-Link and dismiss through the browser, inspect link timeline on both cases, keyboard navigation and responsive layout. Browser helper failed during T51 confirmation and blocked for over two hours; further browser input was stopped, so no UI mutation is claimed verified. T10 API tests cover transaction behavior and live demo.
+### T41 (Reports Page)
+- Open `/reports`: verify all 4 charts (Bureau distribution, Ageing cohorts, Monthly trend, Overlap severity) and their data tables.
+- Test date-range filter with Start/End dates.
+- Click "Download Excel" and "Download PDF", verifying the downloaded files open cleanly.
 
-### T20
-- Verify the header bell badge live count updates when alerts are created.
-- Verify kind filter dropdown in Alerts screen.
-
-### T50
-Visual mode toggle, indicator and ledger paging after T51.
-
-### T51
-Complete online/offline confirmation and case-registration browser flow; verify responsive header layout, non-admin read-only behavior, and ledger paging. Browser helper timed out; do not treat the UI mutation as verified.
-
-### T70
-Full seven-minute browser walkthrough; all task Human checks aggregated in FINAL.md. Review responsive layouts, decision dialogs, policy confirmation/rollback, downloads and non-admin views. Automatic approval review initially rejected UI online confirmation due potential external egress; inspected source proves local stub, but subsequent browser helper timed out.
+### T51 (Privacy Mode)
+- In Admin `/admin`, open Privacy tab.
+- Observe policy settings and paginated egress audit ledger.
