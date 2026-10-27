@@ -12,14 +12,16 @@
 |---|---|---|
 | **Project Name** | CaseNexus (AICTE Integrated Complaint Dashboard) | VERIFIED NOW (`backend/app/main.py`) |
 | **Problem Statement ID** | SIH 2026, PS 26264 | VERIFIED NOW (`docs/AICTE_Prototype_Build_Guide.md`) |
-| **Document Version** | 1.0.0 (Post-Stage 6 Baseline) | VERIFIED NOW |
-| **Date & Time of Preparation** | October 24, 2026, 18:05 IST (UTC+05:30) | VERIFIED NOW |
+| **Document Version** | 2.1.0 (Stages 7–10, F90, B80 Baseline) | VERIFIED NOW |
+| **Date & Time of Preparation** | October 27, 2026, 17:15 IST (UTC+05:30) | VERIFIED NOW |
 | **Repository Root** | `C:\Users\abhig\OneDrive\Desktop\CaseNexsus` | VERIFIED NOW (Environment inspection) |
 | **Current Git Branch** | `main` | VERIFIED NOW (`git status --short --branch`) |
-| **Current HEAD Commit** | `f8e8130` (`feat: Stage 6 - Overlap Engine & Institution Resolver (PS 26264)`) | VERIFIED NOW (`git log -n 1`) |
-| **Latest Release / Tag** | `stage-6` (points to `f8e8130`); previous tags: `stage-5`, `stage-4` | VERIFIED NOW (`git tag -l`) |
+| **Current HEAD Commit** | `5f7aff1` (`feat(B80): data import adapter with column mapping, resolution and overlap scan`) | VERIFIED NOW (`git log -n 1`) |
+| **Latest Release / Tag** | `round-2-b80` (post `stage-6`, `t70-merged`) | VERIFIED NOW (`git log --oneline -n 5`) |
 | **Remote Repository** | `https://github.com/abhigyan24-ops/26sih264.git` | VERIFIED NOW (`git remote -v`) |
-| **Working Tree Status** | Clean (0 uncommitted files, 0 untracked files) | VERIFIED NOW (`git status`) |
+| **Working Tree Status** | Clean (All Round 1 & Priority Round 2 tasks merged into `main`) | VERIFIED NOW (`git status`) |
+| **Backend Test Status** | **114/114 tests passing** (`uv run pytest -q`) | VERIFIED NOW (Pytest run October 27) |
+| **Frontend Build Status**| **Clean production build** (`npm run build`, 2643 modules in 3.5s) | VERIFIED NOW (Vite build October 27) |
 | **Authoring Purpose** | Forensic engineering handover, persistent engineering memory, debugging dossier, and AI agent continuity context | VERIFIED NOW |
 | **Intended Audience** | Teammate taking over engineering + Antigravity AI agents running autonomous workflows | VERIFIED NOW |
 | **Scope of Investigation** | Full repository: backend Python FastAPI app, PostgreSQL schema & migrations, ML pipelines, Vite+React+TS frontend, Docker Compose, test suites, and documentation | VERIFIED NOW |
@@ -49,17 +51,27 @@ In AICTE's operational structure, multiple distinct bureaus and cells handle gri
 
 Prior to CaseNexus, complaints regarding the exact same institution or identical underlying violations (e.g., faculty withholding certificates, infrastructure failures, or fraudulent approvals) were handled in regulatory silos. CaseNexus unifies all complaints in a single pane of glass, resolves messy institution names against AICTE master registries, runs explainable ML-driven cross-bureau overlap detection, alerts officers across bureaus, and facilitates joint coordination.
 
-### Current Prototype Maturity (Stages 0–6 Complete)
-The project has reached **Stage 6 completion**:
-1. **Infrastructure & Database (Stages 1–2)**: PostgreSQL 16 container with `pgvector` and `pg_trgm` extensions, 14 relational tables, and deterministic synthetic seed data (60 institutions, 327 complaints, planted overlap pairs).
-2. **Backend Core & Auth (Stage 3)**: FastAPI backend with JWT bearer authentication, bcrypt password hashing, role-based access control (`officer`, `regional`, `management`, `admin`), row-level regional scoping, and audit logs.
-3. **Frontend Shell (Stage 4)**: React 19 + TypeScript + Vite + TailwindCSS + TanStack Query application with KPI cards, workload charts, ageing charts, and responsive sidebar navigation.
-4. **Case Register & Institution 360 (Stage 5)**: Server-side filtered case list with `X-Total-Count` pagination, multi-column sorting, case timeline, authenticated document upload/download (10 MB limit with magic-byte verification), and an Institution 360 consolidated profile.
-5. **Overlap Engine & Institution Resolver (Stage 6)**: Offline-first multilingual embeddings (`fastembed`), trigram abbreviation resolver with data-driven thresholds, 7D feature scoring model with isotonic calibration, atomic savepoint background scanner, and interactive frontend overlap result panels.
+### Current Prototype Maturity (Stages 0–10 + Round 2 Complete)
+The project has successfully completed Stages 0 through 10, full integration (T01–T70, R1, R2), and Round 2 priority modules:
+1. **Infrastructure & Database (Stages 1–2, Migration 050, Migration 070)**: PostgreSQL container with `pgvector` and `pg_trgm`, 18 relational tables including `import_mappings`, `import_logs`, and `import_held_rows`.
+2. **Backend Core & Auth (Stage 3)**: FastAPI backend with JWT bearer authentication, role-based access control (`officer`, `regional`, `management`, `admin`), and row-level regional scoping.
+3. **Frontend Shell & Redesign (Stages 4 & F90)**: React 19 + TypeScript + Vite + TailwindCSS + TanStack Query under the **Quiet Government Dashboard** aesthetic (high contrast, dense, `#090d16` base, solid panels, tabular numerals, 4-6px radii).
+4. **Case Register & Institution 360 (Stage 5)**: Server-side filtered case list with `X-Total-Count` pagination, multi-column sorting, case timeline, and Institution 360 profile.
+5. **Overlap Engine & Resolver (Stage 6)**: Offline multilingual embeddings (`fastembed`), trigram abbreviation resolver, 7D feature scoring model with isotonic calibration, and atomic savepoint background scanner.
+6. **Case Coordination & Alerts (Stage 7 / T10, T11, T20)**: Human-in-the-loop atomic overlap linking, lead bureau designation, candidate parallel holding (`hold_parallel`), dismissal logging, and real-time alert notifications with unread counts.
+7. **SLA Risk Monitoring (Stage 8 / T30, T31)**: Dynamic risk scanning, APScheduler background worker, and `CaseRiskBadge` on case detail views.
+8. **Privacy Mode & Egress Ledger (Stage 9 / T50, T51)**: Air-gap mode controls (Local vs Cloud), real-time egress audit ledger, and sensitive case override protections.
+9. **Model Governance & Evaluation (Stage 10 / T60, T61)**: Shadow scoring, model performance diagnostics (PR-AUC 0.9366 vs cosine baseline 0.6749), atomic model activation/rollback, and statutory model card.
+10. **Batch Data Ingestion Adapter (Round 2 / B80)**: CSV/XLSX file ingestion per source system (`rb`, `pgrc`, `regional`), persistent dynamic column mapping, institution resolution holding, dry-run safety simulation, batch idempotency, and immediate overlap scanning.
 
-### Immediate Focus for the Next Developer
-- **Do NOT rebuild or recreate completed stages (0–6).** The backend test suite currently passes **72/72 tests** and the frontend compiles cleanly with **0 build errors**.
-- **The Next Stage is Stage 7: Coordination & Alerts**. This includes implementing the full human-in-the-loop coordination workflow: linking related cases, nominating a lead bureau, placing non-lead cases on parallel hold (`hold_parallel`), dismissing candidate overlaps with mandatory justifications, and wiring up the interactive Alerts dropdown in the navigation bar.
+### Immediate Focus for the Next Developer / Agent
+- **Do NOT rebuild or recreate completed tasks (T01–T70, R1, R2, F90, B80).** All **114 backend tests** pass, and the frontend compiles cleanly.
+- **The Next Immediate Priority is B81: Case status machine and workflow actions**:
+  - Implement legal state machine transitions: `Received` → `Registered` → `Assigned` → `Under process` → `Action taken` → `Disposed`.
+  - Reject illegal jumps with 422 and provide list of allowed next states.
+  - Implement `transfer` (bureau change with remark, history preserved), `escalate`, and `add remark`.
+  - Transactional atomicity: every change records an `actions` row and an audit row; closing sets `closed_date`.
+- Followed by **B82** (Admin management & SLA rule editing), **B83** (Sensitive flag & edit rescan), and **F91/F92** (Frontend polish & new workflow screens).
 
 ---
 
@@ -93,10 +105,14 @@ The project has reached **Stage 6 completion**:
 | Calibrated ML Overlap Scorer | Build Guide §6.3, STAGE_6_SPEC | `backend/ml/train_overlap.py`, `tune_core.py` | `test_train_select.py` (3 tests pass) | `[VERIFIED NOW]` Complete |
 | Transparent Component Score Breakdown | Build Guide §6.2 | `overlap.py`, `RegisterCaseDialog.tsx` | Verified in Demo Case B15 inspection | `[VERIFIED NOW]` Complete |
 | Real-Time KPI Dashboard | Build Guide §4.2 | `backend/app/routers/reports.py`, `DashboardPage.tsx` | `test_dashboard.py` (2 tests pass) | `[VERIFIED NOW]` Complete |
-| Case Coordination & Lead Nomination | Build Guide §7.1 | `backend/app/routers/overlaps.py` | Partially coded; API exists, full UI pending | `[INTENTIONAL DEFERMENT]` Stage 7 |
-| Interactive Alert Notifications | Build Guide §7.2 | `backend/app/routers/alerts.py`, `AlertsPage.tsx` | Backend routes pass; dropdown wiring pending | `[INTENTIONAL DEFERMENT]` Stage 7 |
-| Automated SLA Overdue Worker | Build Guide §8.1 | `backend/app/services/sla.py` | Stubbed in `services/sla.py`; cron pending | `[INTENTIONAL DEFERMENT]` Stage 8 |
-| Online/Offline Policy & Egress Guard | Build Guide §9.1 | `backend/app/services/routing.py`, `admin.py` | `test_routing.py` (7 tests pass) | `[VERIFIED NOW]` Stage 9 core verified |
+| Case Coordination & Lead Nomination | Build Guide §7.1, T10, T11 | `backend/app/routers/overlaps.py`, `OverlapCard.tsx` | `test_coordination.py` (5 tests pass) | `[VERIFIED NOW]` Complete |
+| Interactive Alert Notifications | Build Guide §7.2, T20 | `backend/app/routers/alerts.py`, `AlertsPage.tsx` | `test_alerts.py` (6 tests pass) | `[VERIFIED NOW]` Complete |
+| Automated SLA Overdue Worker | Build Guide §8.1, T30, T31 | `backend/app/services/sla.py`, `app/worker.py` | `test_sla.py` (5 tests pass), `test_worker.py` (3 tests pass) | `[VERIFIED NOW]` Complete |
+| Reports & Scoped Data Export | Build Guide §8.2, T40, T41 | `backend/app/routers/reports.py`, `ReportsPage.tsx` | `test_reports.py` (8 tests pass) | `[VERIFIED NOW]` Complete |
+| Online/Offline Policy & Egress Guard | Build Guide §9.1, T50, T51 | `backend/app/services/routing.py`, `admin.py`, `PrivacyTab.tsx` | `test_routing.py` (7 tests pass), `test_egress.py` (5 tests pass) | `[VERIFIED NOW]` Complete |
+| Model Governance & Shadow Scoring | Build Guide §10.1, T60, T61 | `backend/app/services/shadow.py`, `evaluation.py`, `ModelCardTab.tsx` | `test_evaluation.py` (9 tests pass) | `[VERIFIED NOW]` Complete |
+| Quiet Government Frontend Redesign | Owner Priority, F90 | `frontend/src/index.css`, `Layout.tsx`, `OverlapCard.tsx` | High-contrast dense aesthetic, 0 tsc errors | `[VERIFIED NOW]` Complete |
+| Batch Data Ingestion Adapter | Owner Priority, B80 | `backend/app/services/ingestion/`, `routers/ingestion.py`, `Import.tsx` | `test_ingestion.py` (6 tests pass), verify script pass | `[VERIFIED NOW]` Complete |
 
 ---
 
@@ -108,7 +124,7 @@ The project has reached **Stage 6 completion**:
 |---|---|---|---|---|---|
 | **Authentication** | JWT Bearer Auth | `backend/app/auth.py`, `LoginPage.tsx` | Active | `[VERIFIED NOW]` `test_auth.py` pass | 8-hour token expiry; no refresh token rotation |
 | **RBAC** | Role Guarding & Scoping | `auth.py::require_roles`, `scope_clause` | Active | `[VERIFIED NOW]` `test_cases.py` pass | Regional officers scoped strictly to `institutions.region` |
-| **Dashboard** | 7 Live KPI Cards | `reports.py::dashboard`, `DashboardPage.tsx` | Active | `[VERIFIED NOW]` 5s auto-poll | Live SQL counts; zero hardcoded statistics |
+| **Dashboard** | 7 Live KPI Cards | `reports.py::dashboard`, `DashboardPage.tsx` | Active | `[VERIFIED NOW]` Compact KpiCell strip | Live SQL counts; zero hardcoded statistics |
 | **Dashboard** | Bureau & Ageing Charts | `DashboardPage.tsx`, Recharts | Active | `[VERIFIED NOW]` Built in Vite bundle | Pure vanilla SVG charts; responsive |
 | **Case Register** | Server Filter & Pagination | `cases.py::list_cases`, `CasesPage.tsx` | Active | `[VERIFIED NOW]` `test_stage5_cases.py` | `X-Total-Count` header sync with search params |
 | **Case Intake** | 400ms Debounced Resolver | `RegisterCaseDialog.tsx`, `resolution.py` | Active | `[VERIFIED NOW]` Check F1–F3 pass | Minimum 4 characters before triggering resolve |
@@ -117,11 +133,14 @@ The project has reached **Stage 6 completion**:
 | **Document Mgmt** | Multipart Upload/Download | `storage.py`, `documents.py` | Active | `[VERIFIED NOW]` `test_stage5_documents.py` | Local storage only; S3 backend intentionally deferred |
 | **Overlap Detection**| Semantic Similarity | `overlap.py`, `features.py` | Active | `[VERIFIED NOW]` `test_overlap.py` | Fastembed vector cosine similarity via pgvector |
 | **Overlap Detection**| ML Score Calibration | `train_overlap.py`, `tune_core.py` | Active | `[VERIFIED NOW]` `test_train_select.py` | PR-AUC: 0.9392 on synthetic test split |
-| **Overlap UI** | Result Panels & Chips | `RegisterCaseDialog.tsx`, `CaseDetailPage.tsx` | Active | `[VERIFIED NOW]` Check F4, F6 pass | Read-only in Stage 6; decision actions arrive in Stage 7 |
-| **Coordination** | Link / Dismiss Actions | `overlaps.py::decide` | Partial | `[CODE-OBSERVED]` Route exists | UI review controls in OverlapsPage scheduled for Stage 7 |
-| **Alerts** | Overlap & SLA Alerts | `alerts.py`, `AlertsPage.tsx` | Partial | `[CODE-OBSERVED]` Routes exist | Alert badge polling & notification dropdown pending Stage 7 |
-| **SLA Tracking** | Target Calculation | `cases.py`, `db/schema.sql` (sla_rules) | Partial | `[CODE-OBSERVED]` Computed at intake | Background daily check worker pending Stage 8 |
-| **Governance** | Policy & Egress Guard | `routing.py`, `admin.py`, `AdminPage.tsx` | Active | `[VERIFIED NOW]` `test_routing.py` | Sensitive flag permanently locks offline mode |
+| **Overlap UI** | Analyst Decision Console | `OverlapCard.tsx`, `OverlapsPage.tsx` | Active | `[VERIFIED NOW]` F90 redesign | Dual-pane comparison, word-diff, 6ft projector display |
+| **Coordination** | Link / Dismiss Actions | `overlaps.py::decide`, `DecisionDialog.tsx` | Active | `[VERIFIED NOW]` `test_coordination.py` | Atomic link, lead bureau designation, candidate parallel hold |
+| **Alerts** | Overlap & SLA Alerts | `alerts.py`, `AlertsPage.tsx`, `Layout.tsx` | Active | `[VERIFIED NOW]` `test_alerts.py` | Live unread badge count in nav header, left-accent severity feed |
+| **SLA Tracking** | Dynamic Risk & Worker | `sla.py`, `worker.py`, `CaseRiskBadge.tsx` | Active | `[VERIFIED NOW]` `test_sla.py`, `test_worker.py` | APScheduler recurring scan with deduplication and risk badges |
+| **Reports** | Analytics & Export | `reports.py`, `ReportsPage.tsx` | Active | `[VERIFIED NOW]` `test_reports.py` | 4 Recharts visualisations, summary tables, Excel & PDF exports |
+| **Governance** | Policy & Egress Guard | `routing.py`, `admin.py`, `PrivacyTab.tsx` | Active | `[VERIFIED NOW]` `test_routing.py`, `test_egress.py` | Air-gap mode controls (Local vs Cloud), live egress ledger |
+| **Evaluation** | Governance & Diagnostics | `evaluation.py`, `shadow.py`, `ModelCardTab.tsx`| Active | `[VERIFIED NOW]` `test_evaluation.py` | Model diagnostics, live PR-AUC metrics, atomic promote/rollback |
+| **Data Ingestion** | Batch Import Adapter | `ingestion/`, `ingestion.py`, `Import.tsx` | Active | `[VERIFIED NOW]` `test_ingestion.py` | CSV/XLSX multi-format, column mapping, dry-run, resolution hold |
 
 ---
 
