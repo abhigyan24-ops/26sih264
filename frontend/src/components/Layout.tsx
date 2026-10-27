@@ -11,7 +11,7 @@ import { getAlerts, searchInstitutions, me, logout } from '../lib/api'
 const NAV = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard', exact: true },
   { to: '/cases', icon: FileText, label: 'Cases' },
-  { to: '/overlaps', icon: Link2, label: 'Overlaps' },
+  { to: '/overlaps', icon: Link2, label: 'Review overlaps' },
   { to: '/alerts', icon: Bell, label: 'Alerts', badge: true },
   { to: '/reports', icon: BarChart2, label: 'Reports' },
   { to: '/admin', icon: Settings, label: 'Admin', adminOnly: true },
@@ -31,12 +31,14 @@ export default function Layout() {
     retry: false,
   })
 
+  // BEGIN ALERT BADGE SLOT (T20)
   const { data: alerts = [] } = useQuery({
     queryKey: ['alerts', 'unread'],
     queryFn: () => getAlerts(true),
     refetchInterval: 30_000,
   })
-  const unread = (alerts as any[]).length
+  const unread = alerts.length
+  // END ALERT BADGE SLOT (T20)
 
   const { data: searchResults = [] } = useQuery({
     queryKey: ['global-search', searchQuery],

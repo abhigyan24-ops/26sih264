@@ -15,6 +15,7 @@ from sqlalchemy import text
 
 from .features import FEATURES, pair_features
 from .routing import explain_overlap
+from .shadow import shadow_score
 
 log = logging.getLogger(__name__)
 ART = Path(__file__).resolve().parent.parent.parent / "ml" / "artifacts"
@@ -201,6 +202,12 @@ def scan_overlaps(db, case_id: int, max_candidates: int = 200) -> list[dict]:
                             "m": msg,
                         },
                     )
+
+            try:
+                with db.begin_nested():
+                    shadow_score(db, a_id, b_id, pair_features(me, o, cos))
+            except Exception:
+                log.exception("shadow scoring failed for pair %s/%s", a_id, b_id)
 
             found.append({
                 "overlap_id": overlap_id,

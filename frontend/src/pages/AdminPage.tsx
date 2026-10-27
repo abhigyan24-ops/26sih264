@@ -1,8 +1,12 @@
+import { useState } from 'react'
+import PrivacyTab from '../components/admin/PrivacyTab'
+import EvaluationTab from '../components/admin/EvaluationTab'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Shield, Database, Activity, ToggleLeft, ToggleRight } from 'lucide-react'
 import { getPolicy, setPolicy, getModelVersions, getParameterRegistry, getEvaluationReport } from '../lib/api'
 
 export default function AdminPage() {
+  const [tab, setTab] = useState<'overview' | 'privacy' | 'evaluation'>('overview')
   const qc = useQueryClient()
   const { data: policyData } = useQuery({ queryKey: ['policy'], queryFn: getPolicy })
   const { data: models = [] } = useQuery({ queryKey: ['models'], queryFn: getModelVersions })
@@ -31,7 +35,14 @@ export default function AdminPage() {
         <p className="text-sm text-slate-500 mt-0.5">Model governance, policy settings, and system configuration</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div role="tablist" aria-label="Admin sections" className="flex gap-3">
+        {(['overview', 'privacy', 'evaluation'] as const).map(value => (
+          <button key={value} role="tab" aria-selected={tab === value} onClick={() => setTab(value)} className="btn-secondary capitalize">{value}</button>
+        ))}
+      </div>
+      {tab === 'privacy' && <PrivacyTab />}
+      {tab === 'evaluation' && <EvaluationTab />}
+      {tab === 'overview' && <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Policy settings */}
         <div className="card p-5">
           <h2 className="text-sm font-semibold mb-4 flex items-center gap-2">
@@ -231,7 +242,7 @@ export default function AdminPage() {
             </div>
           </div>
         )}
-      </div>
+      </div>}
     </div>
   )
 }
