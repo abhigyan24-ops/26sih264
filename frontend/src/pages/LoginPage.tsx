@@ -26,7 +26,11 @@ export default function LoginPage() {
     } catch (err: any) {
       localStorage.removeItem('token')
       localStorage.removeItem('user')
-      setError(err.response?.data?.detail || err.message || 'Invalid username or password. Is the backend server running?')
+      if (err.response?.status === 405) {
+        setError('405 Method Not Allowed: The frontend is sending requests to Vercel instead of your Railway backend. Please check VITE_API_URL in Vercel and trigger a Redeploy.')
+      } else {
+        setError(err.response?.data?.detail || err.message || 'Invalid username or password. Is the backend server running?')
+      }
     } finally {
       setLoading(false)
     }

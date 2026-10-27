@@ -1,7 +1,16 @@
 import axios from 'axios'
 import type { CaseSummary, FilterMeta, ResolveInstitutionResult, CaseCreateResponse } from './types'
 
-const api = axios.create({ baseURL: import.meta.env.VITE_API_URL || '/api' })
+let base = (import.meta.env.VITE_API_URL || '/api').trim()
+if (base.startsWith('http://') && !base.includes('localhost') && !base.includes('127.0.0.1')) {
+  base = base.replace('http://', 'https://')
+}
+if (base.startsWith('http') && !base.endsWith('/api') && !base.endsWith('/api/')) {
+  base = base.replace(/\/+$/, '') + '/api'
+}
+base = base.replace(/\/+$/, '')
+
+const api = axios.create({ baseURL: base })
 
 // Attach token from localStorage to every request
 api.interceptors.request.use(cfg => {
