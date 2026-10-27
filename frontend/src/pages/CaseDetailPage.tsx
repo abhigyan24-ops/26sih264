@@ -1,3 +1,4 @@
+import CaseReviewLinks from '../components/overlap/CaseReviewLinks'
 // src/pages/CaseDetailPage.tsx — FD5 to FD8
 import { useState, useRef } from 'react'
 import { useParams, Link, useLocation } from 'react-router-dom'
@@ -470,6 +471,8 @@ export default function CaseDetailPage() {
           </div>
         </div>
       )}
+
+      <CaseReviewLinks overlaps={overlaps} />
 
       {/* Main Grid: Left Timeline + Action Form | Right Overlaps */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
