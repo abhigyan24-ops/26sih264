@@ -11,16 +11,20 @@ import {
   Building2, 
   ArrowRight,
   RefreshCw,
-  Scale
+  Scale,
+  Zap,
+  Radio
 } from 'lucide-react'
+import SpotlightCard from './SpotlightCard'
+import ShimmerButton from './ShimmerButton'
 
 // Live Interactive Overlap Simulator Component for Hero
 function HeroInteractiveWidget() {
   const [stage, setStage] = useState<'scan' | 'matched' | 'linked'>('matched')
   const [activeTab, setActiveTab] = useState<'complaints' | 'weights'>('complaints')
+  const prefersReduced = useReducedMotion()
   const similarity = 91.4
 
-  // Auto cycle or user click
   const handleReset = () => {
     setStage('scan')
     setTimeout(() => {
@@ -33,7 +37,7 @@ function HeroInteractiveWidget() {
   }
 
   return (
-    <div className="relative rounded-xl overflow-hidden border border-[#DAD6CC] bg-[#FFFFFF] shadow-[0_12px_36px_-6px_rgba(31,58,95,0.12),0_4px_12px_-2px_rgba(0,0,0,0.04)]">
+    <SpotlightCard className="p-0 border border-[#DAD6CC]">
       {/* Top Header / Status bar */}
       <div className="flex items-center justify-between px-4 py-3 bg-[#EFEDE7] border-b border-[#DAD6CC]">
         <div className="flex items-center gap-2">
@@ -42,17 +46,14 @@ function HeroInteractiveWidget() {
             <span className="w-2.5 h-2.5 rounded-full bg-[#FFB74D]" />
             <span className="w-2.5 h-2.5 rounded-full bg-[#81C784]" />
           </div>
-          <span className="text-xs font-mono font-medium text-[#5B6068] ml-2 flex items-center gap-1">
+          <span className="text-xs font-mono font-medium text-[#5B6068] ml-2 flex items-center gap-1.5">
             <Shield size={12} className="text-[#1F3A5F]" />
             AICTE Cross-Bureau Overlap Engine · Model v2.4 (Calibrated)
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono bg-[#E8F0FE] text-[#175CD3] border border-[#B8D5FA]">
-            <span className="relative flex h-1.5 w-1.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#175CD3] opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#175CD3]"></span>
-            </span>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono bg-[#E8F0FE] text-[#175CD3] border border-[#B8D5FA]">
+            <Radio size={11} className="animate-pulse text-[#175CD3]" />
             CPU ONNX · 384-dim
           </span>
         </div>
@@ -61,7 +62,7 @@ function HeroInteractiveWidget() {
       {/* Target Institution Bar */}
       <div className="px-5 py-3 bg-[#FAF9F6] border-b border-[#DAD6CC] flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <div className="p-1.5 rounded bg-[#E8EDF3] text-[#1F3A5F]">
+          <div className="p-1.5 rounded-lg bg-[#E8EDF3] text-[#1F3A5F]">
             <Building2 size={16} />
           </div>
           <div>
@@ -70,7 +71,7 @@ function HeroInteractiveWidget() {
                 AICTE-1-492019
               </span>
               <span className="text-xs font-semibold text-[#1B1F24]">
-                Apex Institute of Technology & Engineering
+                Apex Institute of Technology &amp; Engineering
               </span>
             </div>
             <p className="text-[11px] text-[#5B6068]">Western Region · Pune, Maharashtra · Status: 2 Active Investigations</p>
@@ -78,7 +79,7 @@ function HeroInteractiveWidget() {
         </div>
         <button 
           onClick={handleReset}
-          className="text-xs font-mono flex items-center gap-1 text-[#5B6068] hover:text-[#1F3A5F] px-2 py-1 rounded hover:bg-[#EFEDE7] transition-colors"
+          className="text-xs font-mono flex items-center gap-1 text-[#5B6068] hover:text-[#1F3A5F] px-2.5 py-1 rounded-md hover:bg-[#EFEDE7] transition-colors cursor-pointer"
           title="Re-run simulated overlap scan"
         >
           <RefreshCw size={11} className={stage === 'scan' ? 'animate-spin' : ''} />
@@ -93,9 +94,9 @@ function HeroInteractiveWidget() {
           <div className="flex gap-2">
             <button
               onClick={() => setActiveTab('complaints')}
-              className={`text-xs font-medium px-3 py-1 rounded-md transition-all ${
+              className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                 activeTab === 'complaints'
-                  ? 'bg-[#1F3A5F] text-white shadow-sm'
+                  ? 'bg-[#1F3A5F] text-white shadow-xs font-semibold'
                   : 'text-[#5B6068] hover:bg-[#EFEDE7]'
               }`}
             >
@@ -103,9 +104,9 @@ function HeroInteractiveWidget() {
             </button>
             <button
               onClick={() => setActiveTab('weights')}
-              className={`text-xs font-medium px-3 py-1 rounded-md transition-all ${
+              className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                 activeTab === 'weights'
-                  ? 'bg-[#1F3A5F] text-white shadow-sm'
+                  ? 'bg-[#1F3A5F] text-white shadow-xs font-semibold'
                   : 'text-[#5B6068] hover:bg-[#EFEDE7]'
               }`}
             >
@@ -122,19 +123,25 @@ function HeroInteractiveWidget() {
           </div>
         </div>
 
-        {/* Tab 1: Dual Complaint Stream */}
+        {/* Tab 1: Dual Complaint Stream with Animated Collision Radar */}
         {activeTab === 'complaints' && (
           <div className="space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 relative">
-              {/* Connector Bridge in Middle */}
+              {/* Central Collision Radar Node */}
               <div className="hidden md:flex absolute inset-y-0 left-1/2 -translate-x-1/2 items-center justify-center pointer-events-none z-10">
-                <div className="w-7 h-7 rounded-full bg-[#1F3A5F] text-white flex items-center justify-center shadow-md border-2 border-white">
-                  <GitMerge size={14} className="rotate-90" />
+                <div className="relative flex items-center justify-center">
+                  {/* Rotating Radar Sweep Pulse */}
+                  {!prefersReduced && (
+                    <div className="absolute w-12 h-12 rounded-full border border-[#1F3A5F]/30 animate-ping opacity-75" />
+                  )}
+                  <div className="w-8 h-8 rounded-full bg-[#1F3A5F] text-white flex items-center justify-center shadow-lg border-2 border-white relative z-10">
+                    <GitMerge size={15} className="rotate-90" />
+                  </div>
                 </div>
               </div>
 
               {/* Case A: Regulation Bureau */}
-              <div className="p-3.5 rounded-lg border border-[#DAD6CC] bg-[#FFFFFF] relative space-y-2">
+              <div className="p-3.5 rounded-xl border border-[#DAD6CC] bg-[#FFFFFF] relative space-y-2 shadow-xs hover:border-[#8C8A82] transition-colors">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#175CD3] bg-[#E8F0FE] px-2 py-0.5 rounded">
                     Case #RB-2026-089 (Regulatory)
@@ -158,9 +165,9 @@ function HeroInteractiveWidget() {
               </div>
 
               {/* Case B: PGRC Grievance */}
-              <div className="p-3.5 rounded-lg border border-[#DAD6CC] bg-[#FFFFFF] space-y-2">
+              <div className="p-3.5 rounded-xl border border-[#DAD6CC] bg-[#FFFFFF] space-y-2 shadow-xs hover:border-[#8C8A82] transition-colors">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#9A4A00] bg-[#FFF3E0] px-2 py-0.5 rounded">
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#8A4B08] bg-[#FFF3E0] px-2 py-0.5 rounded">
                     Case #PGRC-2026-142 (Public Cell)
                   </span>
                   <span className="text-[11px] text-[#5B6068] font-mono">Recd 2d ago</span>
@@ -183,11 +190,11 @@ function HeroInteractiveWidget() {
             </div>
 
             {/* Semantic Token Match Ribbon */}
-            <div className="p-2.5 rounded-md bg-[#F6F5F1] border border-[#DAD6CC] flex items-center justify-between text-xs">
+            <div className="p-2.5 rounded-lg bg-[#FAF9F6] border border-[#DAD6CC] flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
                 <Sparkles size={14} className="text-[#8A4B08]" />
                 <span className="font-semibold text-[#1B1F24]">AI Semantic Finding:</span>
-                <span className="text-[#5B6068]">Paraphrased match detected on faculty shortfall & unauthorized admissions.</span>
+                <span className="text-[#5B6068]">Paraphrased match detected on faculty shortfall &amp; unauthorized admissions.</span>
               </div>
               <span className="font-mono font-bold text-[#067647] bg-[#E6F4EC] px-2 py-0.5 rounded border border-[#A8E2C2]">
                 Isotonic P = 0.914
@@ -208,7 +215,7 @@ function HeroInteractiveWidget() {
                 { name: 'Both Cases In-Process', weight: 1.0, impact: 'Active (+0.05)' },
                 { name: 'Cross-Bureau Flag (RB vs PGRC)', weight: 1.0, impact: 'Coordination Required' },
               ].map((feat) => (
-                <div key={feat.name} className="p-2 rounded border border-[#DAD6CC] bg-[#FAF9F6]">
+                <div key={feat.name} className="p-2 rounded-lg border border-[#DAD6CC] bg-[#FAF9F6]">
                   <div className="flex justify-between items-center mb-1">
                     <span className="font-medium text-[#1B1F24] truncate">{feat.name}</span>
                     <span className="font-mono text-[#067647] text-[11px] font-semibold">{feat.impact}</span>
@@ -229,7 +236,7 @@ function HeroInteractiveWidget() {
         <div className="pt-2 border-t border-[#DAD6CC] flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             {stage === 'linked' ? (
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#067647] bg-[#E6F4EC] px-3 py-1.5 rounded border border-[#A8E2C2]">
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#067647] bg-[#E6F4EC] px-3 py-1.5 rounded-lg border border-[#A8E2C2]">
                 <CheckCircle2 size={13} />
                 Bureaus Linked · Regulation Bureau Designated as Lead
               </span>
@@ -246,14 +253,14 @@ function HeroInteractiveWidget() {
               <>
                 <button
                   onClick={handleLink}
-                  className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded bg-[#1F3A5F] text-white hover:bg-[#17304F] shadow-sm transition-all active:scale-95"
+                  className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#1F3A5F] text-white hover:bg-[#17304F] shadow-sm transition-all active:scale-95 cursor-pointer"
                 >
                   <GitMerge size={12} />
-                  Link & Nominate Lead
+                  Link &amp; Nominate Lead
                 </button>
                 <button
                   onClick={handleLink}
-                  className="inline-flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded bg-[#FAF9F6] border border-[#DAD6CC] text-[#1B1F24] hover:bg-[#EFEDE7] transition-all"
+                  className="inline-flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-lg bg-[#FAF9F6] border border-[#DAD6CC] text-[#1B1F24] hover:bg-[#EFEDE7] transition-all cursor-pointer"
                 >
                   Hold Parallel
                 </button>
@@ -261,7 +268,7 @@ function HeroInteractiveWidget() {
             ) : (
               <button
                 onClick={handleReset}
-                className="text-xs font-mono text-[#175CD3] hover:underline"
+                className="text-xs font-mono text-[#175CD3] hover:underline cursor-pointer"
               >
                 Reset Simulation
               </button>
@@ -269,27 +276,27 @@ function HeroInteractiveWidget() {
           </div>
         </div>
       </div>
-    </div>
+    </SpotlightCard>
   )
 }
 
 const LAYERS = [
   {
     icon: Scale,
-    color: '#175CD3',
+    color: '#1F3A5F',
     label: 'Visibility',
     title: 'Central Institution 360',
     description: 'Every inspection, grievance and notice unified by AICTE Permanent ID.',
   },
   {
-    icon: Sparkles,
+    icon: Zap,
     color: '#067647',
     label: 'Intelligence',
     description: 'Calibrated ML overlap detection across bureaus with 50-language NLP.',
   },
   {
     icon: GitMerge,
-    color: '#9A4A00',
+    color: '#8A4B08',
     label: 'Coordination',
     description: 'Designate lead bureau, hold parallel actions, eliminate contradictory orders.',
   },
@@ -350,7 +357,7 @@ export default function HeroSection() {
                 }}
               >
                 <Shield size={12} className="text-[#8A4B08]" />
-                SIH 2026 · Problem Statement 26264
+                SIH26264 · Team Mutexia
               </span>
               <span
                 className="inline-flex items-center text-xs font-mono px-2.5 py-1 rounded-full border font-semibold"
@@ -361,7 +368,7 @@ export default function HeroSection() {
                   fontFamily: '"IBM Plex Mono", monospace',
                 }}
               >
-                AICTE Official Solution
+                Smart Automation
               </span>
             </div>
 
@@ -388,7 +395,7 @@ export default function HeroSection() {
               {LAYERS.map(({ icon: Icon, color, label }) => (
                 <div
                   key={label}
-                  className="flex items-center gap-2 rounded-md p-2.5 bg-white border border-[#DAD6CC] shadow-xs"
+                  className="flex items-center gap-2 rounded-lg p-2.5 bg-white border border-[#DAD6CC] shadow-xs"
                 >
                   <Icon size={16} style={{ color, flexShrink: 0 }} />
                   <span className="text-xs font-semibold text-[#1B1F24]">{label}</span>
@@ -396,32 +403,24 @@ export default function HeroSection() {
               ))}
             </div>
 
-            {/* CTAs */}
+            {/* CTAs with ShimmerButton */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
-              <button
+              <ShimmerButton
                 onClick={() => navigate('/login')}
-                className="inline-flex items-center justify-center gap-2 text-sm font-semibold px-6 py-3 rounded-lg text-white shadow-md transition-all duration-150 active:scale-95"
-                style={{ background: '#1F3A5F' }}
-                onMouseEnter={e =>
-                  ((e.currentTarget as HTMLButtonElement).style.background = '#17304F')
-                }
-                onMouseLeave={e =>
-                  ((e.currentTarget as HTMLButtonElement).style.background = '#1F3A5F')
-                }
               >
-                Access Live Prototype
-                <ArrowRight size={15} />
-              </button>
+                <span>Access Live Prototype</span>
+                <ArrowRight size={14} />
+              </ShimmerButton>
               
-              <button
+              <ShimmerButton
+                variant="secondary"
                 onClick={() => {
                   const el = document.getElementById('interactive-layers')
                   el?.scrollIntoView({ behavior: 'smooth' })
                 }}
-                className="inline-flex items-center justify-center gap-2 text-sm font-medium px-5 py-3 rounded-lg bg-white border border-[#DAD6CC] text-[#1B1F24] hover:bg-[#FAF9F6] transition-colors"
               >
                 Explore Architecture
-              </button>
+              </ShimmerButton>
             </div>
 
             {/* Verification Tag */}

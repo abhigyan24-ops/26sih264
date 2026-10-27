@@ -1,5 +1,6 @@
 import { useRef } from 'react'
 import { motion, useInView, useReducedMotion } from 'motion/react'
+import SpotlightCard from './SpotlightCard'
 
 const DIFFERENTIATORS = [
   {
@@ -65,7 +66,7 @@ export default function DifferentiatorCards() {
             className="text-xs font-mono uppercase tracking-widest mb-3 block"
             style={{ color: '#8A4B08', fontFamily: '"IBM Plex Mono", monospace' }}
           >
-            Differentiators
+            Engineering Rigor
           </span>
           <h2
             className="text-3xl font-semibold leading-tight mb-3"
@@ -78,7 +79,7 @@ export default function DifferentiatorCards() {
           </p>
         </motion.div>
 
-        {/* 3-column card grid */}
+        {/* 3-column card grid with Spotlight Cards */}
         <div
           ref={gridRef}
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
@@ -88,40 +89,50 @@ export default function DifferentiatorCards() {
               key={item.num}
               initial={{ opacity: 0, y: prefersReduced ? 0 : 20 }}
               animate={gridInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.3, ease: 'easeOut', delay: i * 0.06 }}
-              className="relative flex flex-col gap-3 p-6 rounded-[6px] overflow-hidden"
-              style={{
-                background: '#FFFFFF',
-                border: '1px solid #DAD6CC',
-                borderLeft: '4px solid #1F3A5F',
-              }}
+              transition={{ duration: 0.3, ease: 'easeOut', delay: i * 0.05 }}
+              className="h-full"
             >
-              {/* Large faded background number */}
-              <span
-                aria-hidden="true"
-                className="absolute top-4 right-4 font-mono font-light leading-none select-none pointer-events-none"
-                style={{
-                  fontSize: 48,
-                  color: '#DAD6CC',
-                  fontFamily: '"IBM Plex Mono", monospace',
-                  lineHeight: 1,
-                }}
+              <SpotlightCard
+                spotlightColor="rgba(31, 58, 95, 0.08)"
+                className="h-full p-6 flex flex-col justify-between relative overflow-hidden"
               >
-                {item.num}
-              </span>
+                {/* Large faded background number */}
+                <span
+                  aria-hidden="true"
+                  className="absolute top-4 right-4 font-mono font-light leading-none select-none pointer-events-none"
+                  style={{
+                    fontSize: 48,
+                    color: '#E8EDF3',
+                    fontFamily: '"IBM Plex Mono", monospace',
+                    lineHeight: 1,
+                  }}
+                >
+                  {item.num}
+                </span>
 
-              <p
-                className="text-base font-semibold leading-snug relative z-10"
-                style={{ color: '#1F3A5F', fontFamily: '"IBM Plex Sans", sans-serif' }}
-              >
-                {item.title}
-              </p>
-              <p
-                className="text-sm leading-relaxed relative z-10"
-                style={{ color: '#5B6068', fontFamily: '"IBM Plex Sans", sans-serif' }}
-              >
-                {item.body}
-              </p>
+                <div className="relative z-10 space-y-2">
+                  <span className="text-[11px] font-mono font-bold text-[#8A4B08]">
+                    PILLAR {item.num}
+                  </span>
+                  <p
+                    className="text-base font-semibold leading-snug"
+                    style={{ color: '#1F3A5F', fontFamily: '"IBM Plex Sans", sans-serif' }}
+                  >
+                    {item.title}
+                  </p>
+                  <p
+                    className="text-sm leading-relaxed"
+                    style={{ color: '#5B6068', fontFamily: '"IBM Plex Sans", sans-serif' }}
+                  >
+                    {item.body}
+                  </p>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-[#F0EEE9] flex items-center justify-between text-[11px] font-mono text-[#067647]">
+                  <span>GOVERNANCE CHARTER</span>
+                  <span>ENFORCED</span>
+                </div>
+              </SpotlightCard>
             </motion.div>
           ))}
         </div>

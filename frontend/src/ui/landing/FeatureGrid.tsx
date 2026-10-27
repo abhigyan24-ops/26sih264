@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useRef } from 'react'
 import { motion, useInView, useReducedMotion } from 'motion/react'
 import {
   Building2,
@@ -11,6 +11,7 @@ import {
   FileDown,
   CheckCircle2,
 } from 'lucide-react'
+import SpotlightCard from './SpotlightCard'
 
 const FEATURES = [
   {
@@ -68,7 +69,6 @@ function FeatureTile({
   delay: number
   inView: boolean
 }) {
-  const [hovered, setHovered] = useState(false)
   const prefersReduced = useReducedMotion()
 
   return (
@@ -76,36 +76,45 @@ function FeatureTile({
       initial={{ opacity: 0, y: prefersReduced ? 0 : 20 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.28, ease: 'easeOut', delay }}
-      className="relative flex flex-col gap-3 p-5 rounded-[6px] cursor-default"
-      style={{
-        background: '#F6F5F1',
-        border: `1px solid ${hovered ? '#8C8A82' : '#DAD6CC'}`,
-        transition: 'border-color 150ms ease',
-      }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      className="h-full"
     >
-      <CheckCircle2
-        size={14}
-        className="absolute top-4 right-4"
-        style={{ color: '#067647' }}
-        aria-label="Implemented and verified"
-      />
-      <Icon size={20} style={{ color: '#1F3A5F' }} aria-hidden="true" />
-      <div>
-        <p
-          className="text-sm font-semibold mb-1"
-          style={{ color: '#1B1F24', fontFamily: '"IBM Plex Sans", sans-serif' }}
-        >
-          {title}
-        </p>
-        <p
-          className="text-xs leading-relaxed"
-          style={{ color: '#5B6068', fontFamily: '"IBM Plex Sans", sans-serif' }}
-        >
-          {body}
-        </p>
-      </div>
+      <SpotlightCard
+        spotlightColor="rgba(31, 58, 95, 0.08)"
+        className="h-full p-5 flex flex-col justify-between"
+      >
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="w-8 h-8 rounded-lg bg-[#FAF9F6] border border-[#DAD6CC] flex items-center justify-center text-[#1F3A5F]">
+              <Icon size={18} aria-hidden="true" />
+            </div>
+            <CheckCircle2
+              size={14}
+              style={{ color: '#067647' }}
+              aria-label="Implemented and verified"
+            />
+          </div>
+
+          <div>
+            <p
+              className="text-sm font-semibold mb-1"
+              style={{ color: '#1B1F24', fontFamily: '"IBM Plex Sans", sans-serif' }}
+            >
+              {title}
+            </p>
+            <p
+              className="text-xs leading-relaxed"
+              style={{ color: '#5B6068', fontFamily: '"IBM Plex Sans", sans-serif' }}
+            >
+              {body}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-3 pt-2 border-t border-[#F0EEE9] flex items-center justify-between text-[10px] font-mono text-[#067647]">
+          <span>VERIFIED UNIT</span>
+          <span>100% COVERAGE</span>
+        </div>
+      </SpotlightCard>
     </motion.div>
   )
 }
@@ -135,7 +144,7 @@ export default function FeatureGrid() {
             className="text-xs font-mono uppercase tracking-widest mb-3 block"
             style={{ color: '#1F3A5F', fontFamily: '"IBM Plex Mono", monospace' }}
           >
-            Coverage
+            Statutory Scope
           </span>
           <h2
             className="text-3xl font-semibold leading-tight mb-3"
@@ -156,7 +165,7 @@ export default function FeatureGrid() {
 
         <div
           ref={gridRef}
-          className="grid grid-cols-2 lg:grid-cols-4 gap-3"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5"
         >
           {FEATURES.map((feat, i) => (
             <FeatureTile
@@ -164,7 +173,7 @@ export default function FeatureGrid() {
               icon={feat.icon}
               title={feat.title}
               body={feat.body}
-              delay={i * 0.06}
+              delay={i * 0.05}
               inView={inView}
             />
           ))}

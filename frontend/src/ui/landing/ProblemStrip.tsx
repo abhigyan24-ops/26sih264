@@ -1,6 +1,7 @@
 import { useRef } from 'react'
 import { motion, useInView, useReducedMotion } from 'motion/react'
 import { AlertCircle, ZapOff, Clock, UserX, BookX } from 'lucide-react'
+import SpotlightCard from './SpotlightCard'
 
 const CONSEQUENCES = [
   {
@@ -76,7 +77,7 @@ export default function ProblemStrip() {
               className="text-xs font-mono uppercase tracking-widest mb-3 block"
               style={{ color: '#9A4A00', fontFamily: '"IBM Plex Mono", monospace' }}
             >
-              The problem
+              The Root Cause
             </span>
             <h2
               className="text-3xl font-semibold leading-tight mb-3"
@@ -92,7 +93,7 @@ export default function ProblemStrip() {
           </div>
         </RevealSection>
 
-        {/* Consequence cards */}
+        {/* Consequence cards with Spotlight */}
         <div
           ref={sectionRef}
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4"
@@ -103,25 +104,33 @@ export default function ProblemStrip() {
               initial={{ opacity: 0, y: prefersReduced ? 0 : 20 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.28, ease: 'easeOut', delay: i * 0.07 }}
-              className="flex flex-col gap-3 rounded-[6px] p-5"
-              style={{
-                background: '#FDECEA',
-                border: '1px solid #F8B7B2',
-                borderLeft: '3px solid #B42318',
-              }}
             >
-              <Icon size={20} style={{ color: '#B42318', flexShrink: 0 }} aria-hidden="true" />
-              <div>
-                <p
-                  className="text-sm font-semibold mb-1"
-                  style={{ color: '#1B1F24' }}
-                >
-                  {title}
-                </p>
-                <p className="text-xs leading-relaxed" style={{ color: '#5B6068' }}>
-                  {description}
-                </p>
-              </div>
+              <SpotlightCard
+                spotlightColor="rgba(180, 35, 24, 0.09)"
+                borderColor="#F8B7B2"
+                className="h-full p-5 flex flex-col justify-between"
+              >
+                <div className="space-y-3">
+                  <div className="w-8 h-8 rounded-lg bg-[#FDECEA] flex items-center justify-center text-[#B42318]">
+                    <Icon size={18} aria-hidden="true" />
+                  </div>
+                  <div>
+                    <p
+                      className="text-sm font-semibold mb-1"
+                      style={{ color: '#1B1F24' }}
+                    >
+                      {title}
+                    </p>
+                    <p className="text-xs leading-relaxed" style={{ color: '#5B6068' }}>
+                      {description}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-2 border-t border-[#F8B7B2]/40 text-[10px] font-mono text-[#B42318] font-semibold">
+                  STATUS: HIGH RISK
+                </div>
+              </SpotlightCard>
             </motion.div>
           ))}
         </div>
