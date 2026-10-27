@@ -12,16 +12,17 @@
 |---|---|---|
 | **Project Name** | CaseNexus (AICTE Integrated Complaint Dashboard) | VERIFIED NOW (`backend/app/main.py`) |
 | **Problem Statement ID** | SIH 2026, PS 26264 | VERIFIED NOW (`docs/AICTE_Prototype_Build_Guide.md`) |
-| **Document Version** | 2.1.0 (Stages 7–10, F90, B80 Baseline) | VERIFIED NOW |
-| **Date & Time of Preparation** | October 27, 2026, 17:15 IST (UTC+05:30) | VERIFIED NOW |
+| **Document Version** | 2.2.0 (Stages 0–10, Round 1 T01–T70, B80, Frontend Redesign F00–F09 Complete) | VERIFIED NOW |
+| **Date & Time of Preparation** | October 27, 2026, 20:30 IST (UTC+05:30) | VERIFIED NOW |
 | **Repository Root** | `C:\Users\abhig\OneDrive\Desktop\CaseNexsus` | VERIFIED NOW (Environment inspection) |
-| **Current Git Branch** | `main` | VERIFIED NOW (`git status --short --branch`) |
-| **Current HEAD Commit** | `5f7aff1` (`feat(B80): data import adapter with column mapping, resolution and overlap scan`) | VERIFIED NOW (`git log -n 1`) |
-| **Latest Release / Tag** | `round-2-b80` (post `stage-6`, `t70-merged`) | VERIFIED NOW (`git log --oneline -n 5`) |
+| **Current Git Branch** | `feat/frontend-redesign` | VERIFIED NOW (`git status --short --branch`) |
+| **Current HEAD Commit** | `feat/frontend-redesign` (Cards F00–F09) | VERIFIED NOW (`git log -n 1`) |
+| **Latest Release / Tag** | `frontend-redesign-f09` | VERIFIED NOW |
 | **Remote Repository** | `https://github.com/abhigyan24-ops/26sih264.git` | VERIFIED NOW (`git remote -v`) |
-| **Working Tree Status** | Clean (All Round 1 & Priority Round 2 tasks merged into `main`) | VERIFIED NOW (`git status`) |
+| **Working Tree Status** | Clean (All F00–F09 redesign tasks implemented, verified, committed) | VERIFIED NOW (`git status`) |
 | **Backend Test Status** | **114/114 tests passing** (`uv run pytest -q`) | VERIFIED NOW (Pytest run October 27) |
-| **Frontend Build Status**| **Clean production build** (`npm run build`, 2643 modules in 3.5s) | VERIFIED NOW (Vite build October 27) |
+| **Frontend Build Status**| **Clean production build** (`npm run build`, 2673 modules in 1.76s) | VERIFIED NOW (Vite build October 27) |
+| **E2E Test Status** | **22/22 Playwright flows passing** (100% API request set invariance) | VERIFIED NOW (Playwright run October 27) |
 | **Authoring Purpose** | Forensic engineering handover, persistent engineering memory, debugging dossier, and AI agent continuity context | VERIFIED NOW |
 | **Intended Audience** | Teammate taking over engineering + Antigravity AI agents running autonomous workflows | VERIFIED NOW |
 | **Scope of Investigation** | Full repository: backend Python FastAPI app, PostgreSQL schema & migrations, ML pipelines, Vite+React+TS frontend, Docker Compose, test suites, and documentation | VERIFIED NOW |
@@ -55,7 +56,7 @@ Prior to CaseNexus, complaints regarding the exact same institution or identical
 The project has successfully completed Stages 0 through 10, full integration (T01–T70, R1, R2), and Round 2 priority modules:
 1. **Infrastructure & Database (Stages 1–2, Migration 050, Migration 070)**: PostgreSQL container with `pgvector` and `pg_trgm`, 18 relational tables including `import_mappings`, `import_logs`, and `import_held_rows`.
 2. **Backend Core & Auth (Stage 3)**: FastAPI backend with JWT bearer authentication, role-based access control (`officer`, `regional`, `management`, `admin`), and row-level regional scoping.
-3. **Frontend Shell & Redesign (Stages 4 & F90)**: React 19 + TypeScript + Vite + TailwindCSS + TanStack Query under the **Quiet Government Dashboard** aesthetic (high contrast, dense, `#090d16` base, solid panels, tabular numerals, 4-6px radii).
+3. **Frontend Redesign — Civic Ledger (Cards F00–F09 Complete)**: Refactored complete user interface to the **Civic Ledger** design system (warm paper `#F6F5F1`, clean surface `#FFFFFF`, deep ink-blue `#1F3A5F`, self-hosted IBM Plex Sans & Mono, dense `DataTable`s, `KpiStrip`, relative `SlaDue`, vertical movement `Timeline`, skeuomorphic tactile `ModeToggle` switch, pure browser-side `WordDiff` engine with Devanagari Unicode conjunct support, and Section 4.2 categorical dataviz palette with interactive table toggles). Verified 100% API contract invariance across all 22 Playwright flows against `e2e/baseline/api-calls.json`. All 18 paired before/after screenshots captured in `docs/design/before/` and `docs/design/after/`. Final report documented in `docs/reports/FRONTEND_FINAL.md`.
 4. **Case Register & Institution 360 (Stage 5)**: Server-side filtered case list with `X-Total-Count` pagination, multi-column sorting, case timeline, and Institution 360 profile.
 5. **Overlap Engine & Resolver (Stage 6)**: Offline multilingual embeddings (`fastembed`), trigram abbreviation resolver, 7D feature scoring model with isotonic calibration, and atomic savepoint background scanner.
 6. **Case Coordination & Alerts (Stage 7 / T10, T11, T20)**: Human-in-the-loop atomic overlap linking, lead bureau designation, candidate parallel holding (`hold_parallel`), dismissal logging, and real-time alert notifications with unread counts.
