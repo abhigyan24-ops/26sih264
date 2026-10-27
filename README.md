@@ -100,7 +100,7 @@ npm run dev
 | Frontend dev | `npm run dev` (from `frontend/`) |
 
 > **Data reset (destructive — only for demo reset):**
-> `docker compose down -v && docker compose up -d db`
+> `backend\.venv\Scripts\python scripts/reset_demo.py --database aicte --retrain` (from repository root)
 > Then re-run seed and train.
 
 ---
@@ -249,3 +249,9 @@ Stage 5 is complete with all backend and frontend acceptance criteria satisfied:
 
 Prototype for SIH 2026. All complaint data in this repository is synthetic.
 
+
+## Lane reset and verified status
+
+From the repository root on Windows: `backend\.venv\Scripts\python scripts/reset_demo.py --database aicte_l1 --retrain`. Use the backend virtualenv Python on other systems. The named database must already have db/schema.sql. The helper applies numbered migrations, reseeds synthetic data, optionally tunes/trains, and backfills overlaps. Its exact configured local database name is checked before changes. Put lane DATABASE_URL in backend/.env (settings load from the backend working directory); never commit it. Install backend dependencies with uv pip install -r requirements.txt (requirements.lock.txt is absent), frontend with npm ci.
+
+API: from backend, `python -m uvicorn app.main:app --port 8000`. Web: from frontend, `npm run dev -- --port 5173`. Worker: from backend, `python -m app.worker`. All lanes share the original checkout's Postgres container. Consult docs/reports/FINAL.md and `bash ops/ops.sh status` for actual verified completion. Target capabilities above are not a completion claim. Synthetic data is not evidence of real-world accuracy; Splink remains planned.
