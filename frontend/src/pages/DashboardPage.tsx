@@ -19,62 +19,35 @@ import {
   ArrowUpRight,
   TrendingUp,
   RefreshCw,
-  Loader2,
-  AlertCircle,
+  Activity,
+  ShieldAlert,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { getDashboard } from '../lib/api'
+import { PageHeader, KpiStrip, ErrorState, Skeleton } from '../ui'
 
-const CHART_COLORS = ['#2563eb', '#f59e0b', '#f43f5e', '#10b981', '#8b5cf6', '#06b6d4']
-const BUCKET_COLORS = ['#10b981', '#2563eb', '#f59e0b', '#f97316', '#f43f5e']
+// Categorical palette from Civic Ledger Spec Section 4.2
+const CATEGORICAL_COLORS = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#5B6068', '#8A4B08']
+const BUCKET_COLORS = ['#067647', '#2a78d6', '#9A4A00', '#eb6834', '#B42318']
 
 const TOOLTIP_STYLE = {
-  backgroundColor: '#0f172a',
-  border: '1px solid #334155',
+  backgroundColor: '#FFFFFF',
+  border: '1px solid #DAD6CC',
   borderRadius: '4px',
-  color: '#f8fafc',
+  color: '#1B1F24',
   fontSize: '11px',
+  boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
 }
 
-// Operational compact KPI metric cell
-function KpiCell({
-  label,
-  value,
-  sub,
-  icon: Icon,
-  accent,
-}: {
-  label: string
-  value: number | undefined
-  sub?: string
-  icon: React.ElementType
-  accent: string
-}) {
-  return (
-    <div className="bg-slate-900 border border-slate-800 rounded p-3 flex flex-col justify-between">
-      <div className="flex items-center justify-between text-slate-400 mb-1.5">
-        <span className="text-[10px] font-mono font-bold uppercase tracking-wider">
-          {label}
-        </span>
-        <Icon size={14} className={accent} aria-hidden="true" />
-      </div>
-      <div className="text-xl font-mono font-bold text-slate-100 tabular-nums">
-        {value ?? '—'}
-      </div>
-      {sub && <div className="text-[10px] text-slate-500 mt-0.5 truncate">{sub}</div>}
-    </div>
-  )
-}
-
-const KPI_DEFS = [
-  { key: 'total', label: 'Total Intake', icon: FileText, accent: 'text-blue-400' },
-  { key: 'pending', label: 'Pending Initial', icon: Clock, accent: 'text-amber-400' },
-  { key: 'under_process', label: 'Under Process', icon: RefreshCw, accent: 'text-sky-400' },
-  { key: 'disposed', label: 'Disposed', icon: CheckCircle, accent: 'text-emerald-400' },
-  { key: 'transferred', label: 'Transferred', icon: ArrowUpRight, accent: 'text-purple-400' },
-  { key: 'escalated', label: 'Escalated', icon: TrendingUp, accent: 'text-rose-400' },
-  { key: 'overdue', label: 'Breached SLA', icon: AlertTriangle, accent: 'text-rose-500' },
-] as const
+const KPI_CONFIG = [
+  { key: 'total', label: 'Total Intake', icon: FileText, variant: 'default' as const },
+  { key: 'pending', label: 'Pending Initial', icon: Clock, variant: 'warning' as const },
+  { key: 'under_process', label: 'Under Process', icon: Activity, variant: 'default' as const },
+  { key: 'disposed', label: 'Disposed', icon: CheckCircle, variant: 'success' as const },
+  { key: 'transferred', label: 'Transferred', icon: ArrowUpRight, variant: 'default' as const },
+  { key: 'escalated', label: 'Escalated', icon: TrendingUp, variant: 'danger' as const },
+  { key: 'overdue', label: 'Breached SLA', icon: AlertTriangle, variant: 'danger' as const },
+]
 
 export default function DashboardPage() {
   const {
@@ -93,26 +66,34 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-3 text-slate-400 text-xs">
-        <Loader2 size={24} className="animate-spin text-blue-500" />
-        <p>Loading operational dashboard…</p>
+      <div className="p-6 max-w-7xl mx-auto space-y-6">
+        <Skeleton className="h-14 w-full" />
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <Skeleton key={i} className="h-24 w-full" />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <Skeleton className="h-64 lg:col-span-2 w-full" />
+          <Skeleton className="h-64 w-full" />
+        </div>
       </div>
     )
   }
 
   if (isError) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-3 text-xs">
-        <AlertCircle size={28} className="text-rose-400" />
-        <p className="text-slate-400">
-          {(error as any)?.message ?? 'Failed to load dashboard data.'}
-        </p>
+      <div className="p-6 max-w-xl mx-auto">
+        <ErrorState
+          title="Failed to Load Dashboard Data"
+          message={(error as any)?.message ?? 'The central telemetry stream could not be loaded.'}
+          onRetry={() => refetch()}
+        />
         <button
           onClick={() => refetch()}
-          className="btn-secondary"
+          className="sr-only"
           id="dashboard-retry-btn"
         >
-          <RefreshCw size={13} />
           Retry
         </button>
       </div>
@@ -128,20 +109,28 @@ export default function DashboardPage() {
   const updatedAt = dataUpdatedAt ? new Date(dataUpdatedAt).toLocaleTimeString() : null
   const highOpen: number = overlaps.high_open ?? 0
 
+  const kpiItems = KPI_CONFIG.map(({ key, label, icon, variant }) => ({
+    id: key,
+    label,
+    value: kpi[key],
+    icon,
+    variant,
+  }))
+
   return (
-    <div className="p-6 space-y-5 max-w-7xl mx-auto">
-      {/* High-priority Overlap Alert Banner */}
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      {/* High-priority Overlap Coordination Strip */}
       {highOpen > 0 && (
-        <div className="bg-rose-950/40 border border-rose-800 text-rose-200 rounded px-4 py-2.5 flex items-center justify-between text-xs">
-          <div className="flex items-center gap-2 font-medium">
-            <AlertTriangle size={15} className="text-rose-400" />
+        <div className="bg-[#FDECEA] border border-[#F8B7B2] rounded-[6px] p-3.5 flex items-center justify-between text-xs shadow-xs">
+          <div className="flex items-center gap-2.5 font-medium text-[#B42318]">
+            <ShieldAlert className="w-5 h-5 shrink-0" />
             <span>
-              {highOpen} high-confidence grievance overlap{highOpen !== 1 ? 's' : ''} detected across bureaus requiring officer coordination.
+              <strong>{highOpen} high-confidence cross-bureau overlap{highOpen !== 1 ? 's' : ''}</strong> require lead nomination and institutional coordination.
             </span>
           </div>
           <Link
             to="/overlaps"
-            className="btn-primary text-[11px] py-1 px-2.5 shrink-0"
+            className="inline-flex items-center justify-center px-3 py-1 text-xs font-medium text-white bg-[#B42318] hover:bg-[#911C13] rounded-[4px] transition-colors shrink-0"
           >
             Review Overlaps
           </Link>
@@ -149,82 +138,78 @@ export default function DashboardPage() {
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-100 flex items-center gap-2">
-            Grievance Overview
-            <span className="text-[10px] font-mono bg-slate-900 border border-slate-700 text-slate-400 px-1.5 py-0.5 rounded font-normal">
-              LIVE
-            </span>
-          </h1>
-          <p className="text-xs text-slate-400 mt-0.5 font-mono">
-            AICTE Complaint Monitoring & Resolution Dashboard
-            {updatedAt && <span className="text-slate-500"> · Synced at {updatedAt}</span>}
-          </p>
-        </div>
-        <button
-          onClick={() => refetch()}
-          disabled={isFetching}
-          className="btn-secondary"
-          id="dashboard-refresh-btn"
-        >
-          <RefreshCw size={13} className={isFetching ? 'animate-spin' : ''} />
-          <span>{isFetching ? 'Syncing...' : 'Sync Now'}</span>
-        </button>
-      </div>
+      <PageHeader
+        title="Grievance Operations Ledger"
+        description="Real-time multi-bureau intake telemetry and resolution metrics across AICTE jurisdictions."
+        badge={
+          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-[#E6F4EC] text-[#067647] border border-[#A8E2C2] text-xs font-mono font-medium">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#067647] animate-pulse" />
+            LIVE TELEMETRY
+          </span>
+        }
+        actions={
+          <div className="flex items-center gap-2">
+            {updatedAt && (
+              <span className="text-xs font-mono text-[#5B6068] hidden sm:inline">
+                Synced at {updatedAt}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => refetch()}
+              disabled={isFetching}
+              id="dashboard-refresh-btn"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#1B1F24] bg-[#FFFFFF] border border-[#8C8A82] hover:bg-[#EFEDE7] rounded-[4px] transition-colors"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isFetching ? 'animate-spin' : ''}`} />
+              <span>{isFetching ? 'Syncing...' : 'Sync Now'}</span>
+            </button>
+          </div>
+        }
+      />
 
       {/* Compact Operational KPI Strip */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-        {KPI_DEFS.map(({ key, label, icon, accent }) => (
-          <KpiCell
-            key={key}
-            label={label}
-            value={kpi[key]}
-            icon={icon}
-            accent={accent}
-          />
-        ))}
-      </div>
+      <KpiStrip items={kpiItems} />
 
-      {/* Primary Workload Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      {/* Primary Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Bureau Workload Bar Chart */}
-        <div className="lg:col-span-2 panel bg-slate-900/80 border border-slate-800 rounded p-4">
-          <div className="flex items-center justify-between mb-3 border-b border-slate-800/80 pb-2">
-            <h2 className="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider">
+        <div className="lg:col-span-2 bg-[#FFFFFF] border border-[#DAD6CC] rounded-[6px] p-5 shadow-xs">
+          <div className="flex items-center justify-between mb-4 border-b border-[#DAD6CC] pb-3">
+            <h2 className="text-xs font-mono font-semibold text-[#1B1F24] uppercase tracking-wider">
               Bureau & Cell Workload Distribution
             </h2>
-            <div className="flex items-center gap-3 text-[10px] font-mono text-slate-400">
+            <div className="flex items-center gap-3 text-[11px] font-mono text-[#5B6068]">
               <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-xs bg-blue-500 inline-block" /> Open
+                <span className="w-2.5 h-2.5 rounded-[2px] bg-[#2a78d6] inline-block" /> Open
               </span>
               <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-xs bg-rose-500 inline-block" /> Overdue
+                <span className="w-2.5 h-2.5 rounded-[2px] bg-[#B42318] inline-block" /> Overdue
               </span>
               <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-xs bg-slate-600 inline-block" /> Closed
+                <span className="w-2.5 h-2.5 rounded-[2px] bg-[#5B6068] inline-block" /> Closed
               </span>
             </div>
           </div>
-          <div className="h-52 w-full">
+          <div className="h-56 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={byBureau} barGap={3} margin={{ top: 5, right: 10, left: -25, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                <XAxis dataKey="bureau" stroke="#64748b" fontSize={11} tickLine={false} />
-                <YAxis stroke="#64748b" fontSize={11} tickLine={false} />
+              <BarChart data={byBureau} barGap={2} margin={{ top: 5, right: 10, left: -25, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#EFEDE7" />
+                <XAxis dataKey="bureau" stroke="#5B6068" fontSize={11} tickLine={false} />
+                <YAxis stroke="#5B6068" fontSize={11} tickLine={false} />
                 <Tooltip contentStyle={TOOLTIP_STYLE} />
-                <Bar dataKey="open" name="Open" fill="#2563eb" />
-                <Bar dataKey="overdue" name="Overdue" fill="#f43f5e" />
-                <Bar dataKey="closed" name="Closed" fill="#475569" />
+                <Bar dataKey="open" name="Open" fill="#2a78d6" />
+                <Bar dataKey="overdue" name="Overdue" fill="#B42318" />
+                <Bar dataKey="closed" name="Closed" fill="#5B6068" />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Open Cases by Region Pie Chart */}
-        <div className="panel bg-slate-900/80 border border-slate-800 rounded p-4 flex flex-col justify-between">
-          <div className="border-b border-slate-800/80 pb-2 mb-2">
-            <h2 className="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider">
+        {/* Regional Jurisdiction Ratio */}
+        <div className="bg-[#FFFFFF] border border-[#DAD6CC] rounded-[6px] p-5 shadow-xs flex flex-col justify-between">
+          <div className="border-b border-[#DAD6CC] pb-3 mb-3">
+            <h2 className="text-xs font-mono font-semibold text-[#1B1F24] uppercase tracking-wider">
               Regional Jurisdiction Ratio
             </h2>
           </div>
@@ -238,26 +223,26 @@ export default function DashboardPage() {
                   cx="50%"
                   cy="50%"
                   outerRadius={65}
-                  innerRadius={30}
+                  innerRadius={32}
                   paddingAngle={2}
                 >
                   {byRegion.map((_, i) => (
-                    <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                    <Cell key={i} fill={CATEGORICAL_COLORS[i % CATEGORICAL_COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip contentStyle={TOOLTIP_STYLE} />
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <div className="grid grid-cols-2 gap-1 pt-2 border-t border-slate-800 text-[10px] font-mono text-slate-400">
+          <div className="grid grid-cols-2 gap-1.5 pt-3 border-t border-[#DAD6CC] text-[11px] font-mono text-[#5B6068]">
             {byRegion.map((r, i) => (
               <div key={r.region} className="flex items-center gap-1.5 truncate">
                 <span
-                  className="w-2 h-2 rounded-xs shrink-0"
-                  style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }}
+                  className="w-2.5 h-2.5 rounded-[2px] shrink-0"
+                  style={{ backgroundColor: CATEGORICAL_COLORS[i % CATEGORICAL_COLORS.length] }}
                 />
                 <span className="truncate">{r.region}:</span>
-                <strong className="text-slate-200">{r.open}</strong>
+                <strong className="text-[#1B1F24] tabular-nums">{r.open}</strong>
               </div>
             ))}
           </div>
@@ -265,18 +250,18 @@ export default function DashboardPage() {
       </div>
 
       {/* Secondary Ageing & Overlap Metrics */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* Ageing Cohorts */}
-        <div className="panel bg-slate-900/80 border border-slate-800 rounded p-4">
-          <h2 className="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider mb-3 border-b border-slate-800/80 pb-2">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Ageing Breakdown */}
+        <div className="bg-[#FFFFFF] border border-[#DAD6CC] rounded-[6px] p-5 shadow-xs">
+          <h2 className="text-xs font-mono font-semibold text-[#1B1F24] uppercase tracking-wider mb-4 border-b border-[#DAD6CC] pb-3">
             Open Grievance Ageing Breakdown (Days)
           </h2>
-          <div className="h-44 w-full">
+          <div className="h-48 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={ageing} margin={{ top: 5, right: 10, left: -25, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                <XAxis dataKey="bucket" stroke="#64748b" fontSize={11} tickLine={false} />
-                <YAxis stroke="#64748b" fontSize={11} tickLine={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#EFEDE7" />
+                <XAxis dataKey="bucket" stroke="#5B6068" fontSize={11} tickLine={false} />
+                <YAxis stroke="#5B6068" fontSize={11} tickLine={false} />
                 <Tooltip contentStyle={TOOLTIP_STYLE} />
                 <Bar dataKey="n" name="Cases">
                   {ageing.map((_, i) => (
@@ -288,28 +273,51 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Overlap Summary */}
-        <div className="panel bg-slate-900/80 border border-slate-800 rounded p-4 flex flex-col justify-between">
+        {/* Overlap Summary Telemetry */}
+        <div className="bg-[#FFFFFF] border border-[#DAD6CC] rounded-[6px] p-5 shadow-xs flex flex-col justify-between">
           <div>
-            <h2 className="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider mb-3 border-b border-slate-800/80 pb-2">
+            <h2 className="text-xs font-mono font-semibold text-[#1B1F24] uppercase tracking-wider mb-4 border-b border-[#DAD6CC] pb-3">
               Overlap Engine Telemetry
             </h2>
-            <div className="space-y-2 text-xs">
+            <div className="space-y-2.5 text-xs">
               {[
-                { label: 'High Confidence (Review Required)', value: overlaps.high_open, tag: 'chip-danger' },
-                { label: 'Medium Confidence (Related Issues)', value: overlaps.medium_open, tag: 'chip-warning' },
-                { label: 'Confirmed & Lead Designated', value: overlaps.confirmed, tag: 'chip-success' },
-                { label: 'Dismissed Non-Duplicates', value: overlaps.dismissed, tag: 'chip-neutral' },
-              ].map(({ label, value, tag }) => (
-                <div key={label} className="flex items-center justify-between py-1 border-b border-slate-850">
-                  <span className="text-slate-300 text-[11px]">{label}</span>
-                  <span className={`chip ${tag} font-bold tabular-nums`}>{value ?? 0}</span>
+                {
+                  label: 'High Confidence (Review Required)',
+                  value: overlaps.high_open,
+                  colorClass: 'text-[#B42318] bg-[#FDECEA] border-[#F8B7B2]',
+                },
+                {
+                  label: 'Medium Confidence (Related Issues)',
+                  value: overlaps.medium_open,
+                  colorClass: 'text-[#9A4A00] bg-[#FFF3E0] border-[#FCD299]',
+                },
+                {
+                  label: 'Confirmed & Lead Designated',
+                  value: overlaps.confirmed,
+                  colorClass: 'text-[#067647] bg-[#E6F4EC] border-[#A8E2C2]',
+                },
+                {
+                  label: 'Dismissed Non-Duplicates',
+                  value: overlaps.dismissed,
+                  colorClass: 'text-[#5B6068] bg-[#EFEDE7] border-[#DAD6CC]',
+                },
+              ].map(({ label, value, colorClass }) => (
+                <div
+                  key={label}
+                  className="flex items-center justify-between py-1.5 border-b border-[#EFEDE7]"
+                >
+                  <span className="text-[#1B1F24] text-xs font-medium">{label}</span>
+                  <span
+                    className={`inline-flex items-center px-2 py-0.5 rounded-[4px] border text-xs font-mono font-bold tabular-nums ${colorClass}`}
+                  >
+                    {value ?? 0}
+                  </span>
                 </div>
               ))}
             </div>
           </div>
-          <div className="pt-3 border-t border-slate-800 text-[11px] text-slate-500 font-mono">
-            Calibrated classifier model PR-AUC: 0.93 · High threshold $\ge 0.73$.
+          <div className="pt-3 border-t border-[#DAD6CC] text-[11px] text-[#5B6068] font-mono">
+            Calibrated classifier model PR-AUC: 0.93 · High threshold &ge; 0.73.
           </div>
         </div>
       </div>

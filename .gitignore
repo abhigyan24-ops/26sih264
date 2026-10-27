@@ -14,3 +14,5 @@ pgdata/
 .cache/
 backend/models/
 models/
+test-results/
+playwright-report/

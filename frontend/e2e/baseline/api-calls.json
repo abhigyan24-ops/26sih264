@@ -1,0 +1,64 @@
+{
+  "login": [
+    "GET /api/alerts",
+    "GET /api/auth/me",
+    "GET /api/dashboard",
+    "GET /api/policy",
+    "GET /api/policy/status",
+    "POST /api/auth/login"
+  ],
+  "dashboard": [
+    "GET /api/alerts",
+    "GET /api/auth/me",
+    "GET /api/dashboard",
+    "GET /api/policy",
+    "GET /api/policy/status"
+  ],
+  "cases_list": [
+    "GET /api/alerts",
+    "GET /api/auth/me",
+    "GET /api/cases",
+    "GET /api/meta/filters",
+    "GET /api/policy",
+    "GET /api/policy/status"
+  ],
+  "case_detail": [
+    "GET /api/alerts",
+    "GET /api/auth/me",
+    "GET /api/cases/:id",
+    "GET /api/meta/filters",
+    "GET /api/policy",
+    "GET /api/policy/status"
+  ],
+  "register_case": [],
+  "overlaps": [
+    "GET /api/alerts",
+    "GET /api/auth/me",
+    "GET /api/overlaps",
+    "GET /api/policy",
+    "GET /api/policy/status"
+  ],
+  "alerts": [
+    "GET /api/alerts",
+    "GET /api/auth/me",
+    "GET /api/policy",
+    "GET /api/policy/status"
+  ],
+  "reports": [
+    "GET /api/alerts",
+    "GET /api/auth/me",
+    "GET /api/policy",
+    "GET /api/policy/status",
+    "GET /api/reports/ageing",
+    "GET /api/reports/bureau-wise",
+    "GET /api/reports/overlaps",
+    "GET /api/reports/trend"
+  ],
+  "admin": [
+    "GET /api/alerts",
+    "GET /api/auth/me",
+    "GET /api/egress-ledger",
+    "GET /api/policy",
+    "GET /api/policy/status"
+  ]
+}

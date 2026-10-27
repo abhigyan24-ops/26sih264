@@ -2,22 +2,55 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── AICTE CaseNexus: Quiet Government Dashboard Tokens ────────────────────── */
+/* ── CaseNexus Design System: Civic Ledger ───────────────────────────── */
 
 @layer base {
   :root {
+    /* Civic Ledger light-paper palette (Section 4.1) */
+    --bg: #F6F5F1;
+    --surface: #FFFFFF;
+    --surface-2: #EFEDE7;
+    --border: #DAD6CC;
+    --border-strong: #8C8A82;
+    --text: #1B1F24;
+    --text-muted: #5B6068;
+    --primary: #1F3A5F;
+    --primary-hover: #17304F;
+    --sidebar: #14233A;
+    --sidebar-text: #E8EDF3;
+    --sidebar-muted: #A9B6C6;
+    --accent: #8A4B08;
+    --focus: #1F6FEB;
+
+    /* Semantic status tokens (contrast verified >= 4.5:1) */
+    --status-high-text: #B42318;
+    --status-high-bg: #FDECEA;
+    --status-high-border: #F8B7B2;
+    --status-medium-text: #9A4A00;
+    --status-medium-bg: #FFF3E0;
+    --status-medium-border: #FCD299;
+    --status-info-text: #175CD3;
+    --status-info-bg: #E8F0FE;
+    --status-info-border: #B8D5FA;
+    --status-ok-text: #067647;
+    --status-ok-bg: #E6F4EC;
+    --status-ok-border: #A8E2C2;
+
+    /* Chart categorical palette (Section 4.2) */
+    --chart-1: #2a78d6;
+    --chart-2: #eb6834;
+    --chart-3: #1baf7a;
+    --chart-4: #eda100;
+
+    /* Legacy tokens preserved for un-migrated components during strangler transition */
     --bg-primary: #090d16;
     --bg-panel: #0e1526;
     --bg-panel-elevated: #141d33;
     --bg-row-hover: #17223b;
     --border-subtle: #1e293b;
     --border-default: #2a374f;
-    --border-strong: #3d4f70;
-    --primary: #2563eb;
-    --primary-hover: #1d4ed8;
     --text-primary: #f8fafc;
     --text-secondary: #94a3b8;
-    --text-muted: #64748b;
   }
 
   * {
@@ -25,7 +58,7 @@
   }
 
   body {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
     background-color: var(--bg-primary);
     color: var(--text-primary);
     min-height: 100vh;
@@ -36,28 +69,29 @@
 
   /* Accessible focus indicators across all interactive elements */
   :focus-visible {
-    outline: 2px solid #3b82f6;
-    outline-offset: 1px;
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
   }
 
+  /* Scrollbars styled consistently */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
   ::-webkit-scrollbar-track {
-    background: #090d16;
+    background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: #1e293b;
+    background: var(--border-strong);
     border-radius: 3px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #334155;
+    background: var(--text-muted);
   }
 }
 
 @layer components {
-  /* Solid operational containers replacing glassmorphism */
+  /* Legacy classes kept for non-migrated screens */
   .panel {
     background-color: var(--bg-panel);
     border: 1px solid var(--border-subtle);
@@ -74,7 +108,6 @@
     color: #e2e8f0;
   }
 
-  /* High-density operational buttons */
   .btn-primary {
     @apply inline-flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700
            text-white text-xs font-medium px-3 py-1.5 rounded transition-colors
@@ -93,7 +126,6 @@
            disabled:opacity-50 disabled:pointer-events-none;
   }
 
-  /* Crisp status chips (compact, high-contrast, text + border) */
   .chip {
     @apply inline-flex items-center gap-1 text-[11px] font-mono font-medium px-2 py-0.5 rounded border;
   }
@@ -118,7 +150,6 @@
     @apply bg-emerald-950/50 text-emerald-300 border-emerald-800/80;
   }
 
-  /* Backwards compatibility aliases mapped to crisp chips */
   .badge-high    { @apply chip chip-danger; }
   .badge-medium  { @apply chip chip-warning; }
   .badge-info    { @apply chip chip-info; }
@@ -135,7 +166,6 @@
   .status-transferred   { @apply chip-warning; }
   .status-reopened      { @apply chip-warning; }
 
-  /* Dense operational tables */
   .gov-table {
     @apply w-full text-left text-xs border-collapse;
   }
@@ -157,7 +187,6 @@
     @apply border-b border-slate-800/80 hover:bg-slate-800/60 transition-colors;
   }
 
-  /* Standard form inputs */
   .input {
     @apply w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-xs text-slate-100
            placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500
@@ -168,7 +197,6 @@
     @apply input cursor-pointer;
   }
 
-  /* Operational card */
   .card {
     @apply panel;
   }
