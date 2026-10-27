@@ -31,7 +31,13 @@ def main():
         from app.db import engine
         with engine.begin() as conn:
             conn.exec_driver_sql(migration.read_text(encoding="utf-8"))
+    from app.db import engine
+    from sqlalchemy import text
     subprocess.run([sys.executable, "-m", "scripts.seed"], check=True)
+    # Seed truncates officers and cascades policy rows; demo always restarts offline.
+    with engine.begin() as conn:
+        conn.execute(text("INSERT INTO policy_settings(scope,value) VALUES('global','offline') "
+                          "ON CONFLICT(scope) DO UPDATE SET value='offline'"))
     if args.retrain:
         subprocess.run([sys.executable, "-m", "ml.tune_resolver"], check=True)
         subprocess.run([sys.executable, "-m", "ml.train_overlap"], check=True)

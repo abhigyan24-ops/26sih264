@@ -48,6 +48,8 @@ docker compose exec db psql -U aicte -d aicte -c "\dt"
 
 ### 3. Backend
 ```bash
+# From the repository root, configure the backend working-directory environment:
+cp .env backend/.env
 cd backend
 # Install uv if not present: https://docs.astral.sh/uv/getting-started/installation/
 uv python install 3.12
@@ -255,3 +257,6 @@ Prototype for SIH 2026. All complaint data in this repository is synthetic.
 From the repository root on Windows: `backend\.venv\Scripts\python scripts/reset_demo.py --database aicte_l1 --retrain`. Use the backend virtualenv Python on other systems. The named database must already have db/schema.sql. The helper applies numbered migrations, reseeds synthetic data, optionally tunes/trains, and backfills overlaps. Its exact configured local database name is checked before changes. Put lane DATABASE_URL in backend/.env (settings load from the backend working directory); never commit it. Install backend dependencies with uv pip install -r requirements.txt (requirements.lock.txt is absent), frontend with npm ci.
 
 API: from backend, `python -m uvicorn app.main:app --port 8000`. Web: from frontend, `npm run dev -- --port 5173`. Worker: from backend, `python -m app.worker`. All lanes share the original checkout's Postgres container. Consult docs/reports/FINAL.md and `bash ops/ops.sh status` for actual verified completion. Target capabilities above are not a completion claim. Synthetic data is not evidence of real-world accuracy; Splink remains planned.
+
+
+The reset helper restarts the synthetic demo with global policy offline. On Windows use `Copy-Item .env backend/.env` for the environment-copy step. Reusing cached model weights can be forced offline with `HF_HUB_OFFLINE=1` in the process environment. L4 validation uses API 8300/web 5473; its local untracked Vite override proxies to API 8300. The normal L1/default Vite configuration proxies to API 8000. Never run a second Postgres container for a lane.
