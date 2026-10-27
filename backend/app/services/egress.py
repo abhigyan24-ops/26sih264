@@ -13,7 +13,6 @@ Production roadmap:
 - Real HTTP provider calls here (LLM, email, enrichment)
 - VPC-level network controls in addition to app-layer
 """
-import json
 import re
 
 from sqlalchemy import text
@@ -37,58 +36,30 @@ class EgressBlocked(Exception):
     pass
 
 
-def send(
-    db,
-    *,
-    capability: str,
-    destination: str,
-    payload_kind: str,
-    case_ref: str | None,
-    payload: dict,
-) -> dict:
-    """
-    Attempt to send data to an external service.
-
-    Policy precedence (strictest wins):
-      per-case sensitivity > per-capability setting > global mode
-
-    sensitive parameter is handled by the caller (resolve_route) before calling send().
-    """
-    global_mode = db.execute(
-        text("SELECT value FROM policy_settings WHERE scope='global'")
-    ).scalar() or "offline"
-
-    cap_mode = (
-        db.execute(
-            text("SELECT value FROM policy_settings WHERE scope=:c"),
-            {"c": capability},
-        ).scalar()
-        or global_mode
-    )
-
-    if cap_mode == "offline":
-        db.execute(
-            text(
-                "INSERT INTO egress_ledger "
-                "(capability,destination,payload_kind,case_ref,mode,redacted,outcome) "
-                "VALUES (:c,:d,:k,:r,'offline',TRUE,'blocked')"
-            ),
-            {"c": capability, "d": destination, "k": payload_kind, "r": case_ref},
-        )
-        db.commit()
+def send(db, *, capability: str, destination: str, payload_kind: str,
+         case_ref: str | None, payload: dict, sensitive: bool = False) -> dict:
+    """Resolve policy once; persist ledger independently of the caller transaction."""
+    from .routing import resolve_route
+    from ..db import SessionLocal
+    mode = resolve_route(db, capability, sensitive)
+    def scrub(value):
+        if isinstance(value, str):
+            return redact(value)
+        if isinstance(value, dict):
+            return {key: scrub(item) for key, item in value.items()}
+        if isinstance(value, list):
+            return [scrub(item) for item in value]
+        if isinstance(value, int) and re.fullmatch(r"\d{10}", str(value)):
+            return "[phone]"
+        return value
+    clean = scrub(payload)
+    with SessionLocal() as ledger_db:
+        ledger_db.execute(text(
+            "INSERT INTO egress_ledger (capability,destination,payload_kind,case_ref,mode,redacted,outcome) "
+            "VALUES (:c,:d,:k,:r,:mode,TRUE,:outcome)"),
+            {"c": capability, "d": destination, "k": payload_kind, "r": case_ref,
+             "mode": mode, "outcome": "stub" if mode == "online" else "blocked"})
+        ledger_db.commit()
+    if mode != "online":
         raise EgressBlocked(capability)
-
-    # Online path: redact before sending
-    clean = json.loads(redact(json.dumps(payload)))
-
-    # Prototype: stub. Wire a real provider here when required.
-    db.execute(
-        text(
-            "INSERT INTO egress_ledger "
-            "(capability,destination,payload_kind,case_ref,mode,redacted,outcome) "
-            "VALUES (:c,:d,:k,:r,'online',TRUE,'stub')"
-        ),
-        {"c": capability, "d": destination, "k": payload_kind, "r": case_ref},
-    )
-    db.commit()
     return clean

@@ -69,3 +69,32 @@ def test_defaults_to_offline_when_no_settings():
     """When no settings exist, fail closed (offline)."""
     db = FakeDB({})
     assert resolve_route(db, "explain", sensitive=False) == "offline"
+
+
+def test_unknown_values_fail_closed():
+    assert resolve_route(FakeDB({"global": "typo"}), "explain") == "offline"
+    assert resolve_route(FakeDB({"global": "online", "explain": "typo"}), "explain") == "offline"
+    assert resolve_route(FakeDB({"global": "online"}), "unknown") == "offline"
+
+
+def test_breaker_success_and_cooldown(monkeypatch):
+    from app.services import routing
+    routing._fail.clear()
+    routing._retry_at.clear()
+    now = [10.0]
+    monkeypatch.setattr(routing.time, "monotonic", lambda: now[0])
+    def fail(*args, **kwargs):
+        raise RuntimeError("provider unavailable")
+    monkeypatch.setattr(routing, "llm_explanation", fail)
+    db = FakeDB({"global": "online"})
+    for _ in range(3):
+        assert routing.explain_overlap(db, {}, {}, {})[1] == "template"
+    monkeypatch.setattr(routing, "llm_explanation", lambda *args, **kwargs: "recovered")
+    assert routing.explain_overlap(db, {}, {}, {})[1] == "template"
+    now[0] += routing.COOLDOWN_SECONDS + 1
+    assert routing.explain_overlap(db, {}, {}, {}) == ("recovered", "llm")
+    assert routing._fail["explain"] == 0
+    routing._fail["explain"] = 2
+    assert routing.explain_overlap(db, {}, {}, {})[1] == "llm"
+    assert routing._fail["explain"] == 0
+    routing._retry_at.clear()

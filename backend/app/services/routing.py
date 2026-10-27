@@ -13,12 +13,16 @@ Providers:
 The circuit breaker (_fail counter) ensures a failing online provider
 falls back to local, never propagating errors to the user.
 """
+import math
+import time
 from sqlalchemy import text
 
 from . import egress
 
 
 CAPABILITIES = ("email", "explain", "enrich")
+_retry_at: dict[str, float] = {}
+COOLDOWN_SECONDS = 300
 _fail: dict[str, int] = {}   # simple in-process circuit breaker counters
 
 
@@ -33,9 +37,11 @@ def resolve_route(db, capability: str, sensitive: bool = False) -> str:
     Return 'online' or 'offline'.
     Sensitive cases override everything → always offline.
     """
-    if sensitive:
+    if sensitive or capability not in CAPABILITIES:
         return "offline"
-    return get_setting(db, capability) or get_setting(db, "global") or "offline"
+    override = get_setting(db, capability)
+    selected = override if override is not None else get_setting(db, "global")
+    return "online" if selected == "online" else "offline"
 
 
 # ── Offline provider (always available) ─────────────────────────────────────
@@ -55,7 +61,7 @@ def template_explanation(breakdown: dict, a: dict, b: dict) -> str:
         parts.append("same complaint category")
     log_d = breakdown.get("log_days", {}).get("value")
     if log_d is not None:
-        days = round(2.718281828 ** log_d - 1)
+        days = round(math.expm1(log_d))
         parts.append(f"received about {days} days apart")
     if breakdown.get("cross_bureau", {}).get("value") == 1.0:
         parts.append("handled by different Bureaus/Cells")
@@ -66,7 +72,7 @@ def template_explanation(breakdown: dict, a: dict, b: dict) -> str:
 
 # ── Online provider (stub) ───────────────────────────────────────────────────
 
-def llm_explanation(db, breakdown: dict, a: dict, b: dict) -> str:
+def llm_explanation(db, breakdown: dict, a: dict, b: dict, sensitive: bool = False) -> str:
     """Online stub: goes through the egress gateway. Wire a real LLM here."""
     payload = {"breakdown": breakdown}
     egress.send(
@@ -76,6 +82,7 @@ def llm_explanation(db, breakdown: dict, a: dict, b: dict) -> str:
         payload_kind="overlap_summary",
         case_ref=None,
         payload=payload,
+        sensitive=sensitive,
     )
     # Stub returns the template explanation with a marker
     return template_explanation(breakdown, a, b) + " [LLM stub]"
@@ -91,9 +98,16 @@ def explain_overlap(
     Fails to local (template) on any online provider error — never fails open.
     """
     route = resolve_route(db, "explain", sensitive)
+    if _fail.get("explain", 0) >= 3 and time.monotonic() >= _retry_at.get("explain", 0):
+        _fail["explain"] = 0
     if route == "online" and _fail.get("explain", 0) < 3:
         try:
-            return llm_explanation(db, breakdown, a, b), "llm"
+            explanation = llm_explanation(db, breakdown, a, b, sensitive=sensitive)
+            _fail["explain"] = 0
+            _retry_at.pop("explain", None)
+            return explanation, "llm"
         except Exception:
             _fail["explain"] = _fail.get("explain", 0) + 1
+            if _fail["explain"] >= 3:
+                _retry_at["explain"] = time.monotonic() + COOLDOWN_SECONDS
     return template_explanation(breakdown, a, b), "template"
