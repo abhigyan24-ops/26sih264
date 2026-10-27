@@ -1,7 +1,13 @@
 import { test, expect } from '@playwright/test'
 
-test('frontend root redirects to login', async ({ page }) => {
+test('frontend root renders promotional landing page for public visitors', async ({ page }) => {
   await page.goto('/')
+  await expect(page.locator('h1')).toContainText('No AICTE officer should act on an institution')
+  await expect(page.locator('button:has-text("Access Live Prototype")')).toBeVisible()
+})
+
+test('unauthenticated access to protected dashboard redirects to login', async ({ page }) => {
+  await page.goto('/dashboard')
   await page.waitForURL('**/login')
   await expect(page.locator('input[placeholder*="officer username"]')).toBeVisible()
 })

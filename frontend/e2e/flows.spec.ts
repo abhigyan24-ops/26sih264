@@ -47,7 +47,7 @@ async function loginAsAdmin(page: any) {
   await page.fill('input[placeholder*="officer username"]', 'admin')
   await page.fill('input[placeholder*="secure password"]', 'demo123')
   await page.click('button[type="submit"]')
-  await page.waitForURL('http://localhost:5173/')
+  await page.waitForURL('http://localhost:5173/**')
   await page.waitForTimeout(500)
 }
 
@@ -72,7 +72,7 @@ test.describe.serial('CaseNexus Flow Contract & Baseline Suite', () => {
     await page.fill('input[placeholder*="secure password"]', 'demo123')
     await page.click('button[type="submit"]')
 
-    await page.waitForURL('http://localhost:5173/')
+    await page.waitForURL('http://localhost:5173/**')
     await expect(page.locator('h1, header, aside').first()).toBeVisible()
     await page.waitForTimeout(1000)
   })
@@ -234,7 +234,7 @@ test.describe.serial('CaseNexus Flow Contract & Baseline Suite', () => {
     await page.fill('input[placeholder*="officer username"]', 'admin')
     await page.fill('input[placeholder*="secure password"]', 'demo123')
     await page.click('button[type="submit"]')
-    await page.waitForURL('http://localhost:5173/')
+    await page.waitForURL('http://localhost:5173/**')
 
     await page.goto('/cases')
     await page.waitForSelector('table')
@@ -247,7 +247,7 @@ test.describe.serial('CaseNexus Flow Contract & Baseline Suite', () => {
     await page.fill('input[placeholder*="officer username"]', 'admin')
     await page.fill('input[placeholder*="secure password"]', 'demo123')
     await page.click('button[type="submit"]')
-    await page.waitForURL('http://localhost:5173/')
+    await page.waitForURL('http://localhost:5173/**')
     await expect(page.locator('body')).toBeVisible()
   })
 

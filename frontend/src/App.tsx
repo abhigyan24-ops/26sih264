@@ -19,23 +19,37 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
+// When root / is visited: public visitors see LandingPage; authenticated officers go to Dashboard
+function RootRoute() {
+  const token = localStorage.getItem('token')
+  const isAuthenticated = Boolean(token && token !== 'undefined' && token !== 'null')
+  if (!isAuthenticated) {
+    return <LandingPage />
+  }
+  return <Navigate to="/dashboard" replace />
+}
+
 export default function App() {
   return (
     <Routes>
-      {/* Public routes - no auth required */}
+      {/* Root route: automatically opens Landing Page for visitors on Vercel */}
+      <Route path="/" element={<RootRoute />} />
       <Route path="/landing" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/" element={<RequireAuth><Layout /></RequireAuth>}>
-        <Route index element={<DashboardPage />} />
-        <Route path="cases" element={<CasesPage />} />
-        <Route path="cases/:id" element={<CaseDetailPage />} />
-        <Route path="overlaps" element={<OverlapsPage />} />
-        <Route path="institutions/:id" element={<InstitutionPage />} />
-        <Route path="alerts" element={<AlertsPage />} />
-        <Route path="reports" element={<ReportsPage />} />
-        <Route path="import" element={<ImportPage />} />
-        <Route path="admin" element={<AdminPage />} />
+
+      {/* Authenticated operational app routes */}
+      <Route element={<RequireAuth><Layout /></RequireAuth>}>
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/cases" element={<CasesPage />} />
+        <Route path="/cases/:id" element={<CaseDetailPage />} />
+        <Route path="/overlaps" element={<OverlapsPage />} />
+        <Route path="/institutions/:id" element={<InstitutionPage />} />
+        <Route path="/alerts" element={<AlertsPage />} />
+        <Route path="/reports" element={<ReportsPage />} />
+        <Route path="/import" element={<ImportPage />} />
+        <Route path="/admin" element={<AdminPage />} />
       </Route>
+
       {/* Dev-only UI component gallery */}
       {import.meta.env.DEV && <Route path="/__ui" element={<UiGallery />} />}
       <Route path="*" element={<Navigate to="/" replace />} />

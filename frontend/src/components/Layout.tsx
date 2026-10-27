@@ -17,7 +17,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     group: 'Operations',
     items: [
-      { to: '/', icon: LayoutDashboard, label: 'Dashboard', exact: true },
+      { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', exact: true },
       { to: '/cases', icon: FileText, label: 'Grievance Cases' },
       { to: '/overlaps', icon: Link2, label: 'Review Overlaps' },
       { to: '/alerts', icon: Bell, label: 'Alerts & Actions', badge: true },

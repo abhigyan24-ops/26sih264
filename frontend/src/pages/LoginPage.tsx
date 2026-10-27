@@ -22,7 +22,7 @@ export default function LoginPage() {
       localStorage.setItem('token', access_token)
       const user = await me()
       localStorage.setItem('user', JSON.stringify(user))
-      navigate('/')
+      navigate('/dashboard')
     } catch (err: any) {
       localStorage.removeItem('token')
       localStorage.removeItem('user')
