@@ -7,6 +7,7 @@ Overlap scorer training implementing D10 to D14:
 - Plain-text ACTIVE pointer
 - Diagnostics: cosine baseline, Brier score, 5-bin reliability table, near-identical text fraction
 """
+import argparse
 import datetime
 import itertools
 import json
@@ -78,7 +79,7 @@ def at(y, p, t):
     }
 
 
-def load_pairs():
+def load_pairs(include_metadata=False):
     """
     Load all cases with embeddings from DB, build all same-institution pairs.
     Returns X (features), y (labels), g (institution groups for split).
@@ -90,7 +91,7 @@ def load_pairs():
                        received_date, inst_match_conf, issue_key,
                        embedding::text AS emb
                 FROM cases
-                WHERE embedding IS NOT NULL
+                WHERE embedding IS NOT NULL AND issue_key IS NOT NULL
             """)
         ).mappings().all()
 
@@ -100,7 +101,7 @@ def load_pairs():
         d["vec"] = np.array(json.loads(d["emb"]))
         by_inst[d["institution_id"]].append(d)
 
-    X, y, g = [], [], []
+    X, y, g, metadata = [], [], [], []
     for inst, cs in by_inst.items():
         for a, b in itertools.combinations(cs, 2):
             norm_a = np.linalg.norm(a["vec"])
@@ -117,11 +118,20 @@ def load_pairs():
             X.append(pair_features(a, b, cos))
             y.append(label)
             g.append(inst)
+            metadata.append({"case_a": a["id"], "case_b": b["id"], "institution_id": inst,
+                             "labelled": a["issue_key"] is not None and b["issue_key"] is not None,
+                             "a_active": a["closed_date"] is None, "b_active": b["closed_date"] is None})
 
-    return np.array(X), np.array(y), np.array(g)
+    arrays = (np.array(X), np.array(y), np.array(g))
+    return (*arrays, metadata) if include_metadata else arrays
 
 
-def main():
+def held_out_split(X, y, groups):
+    """Canonical split reused by training and evaluation."""
+    return next(GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=7).split(X, y, groups))
+
+
+def main(shadow=False):
     X, y, g = load_pairs()
     n_pos = int(y.sum())
     print(f"Pairs: {len(y)} total | {n_pos} positive ({y.mean():.1%}) across {len(set(g))} institutions")
@@ -131,7 +141,7 @@ def main():
             f"Only {n_pos} positive pairs; need >= {MIN_POS_ALL}. Re-seed with more institutions."
         )
 
-    tr, te = next(GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=7).split(X, y, g))
+    tr, te = held_out_split(X, y, g)
     if y[tr].sum() < MIN_POS_TRAIN:
         raise SystemExit("Too few positive training pairs; re-seed with more institutions.")
 
@@ -182,41 +192,46 @@ def main():
             "t_high": sel["t_high"],
             "t_med": sel["t_med"],
             "version": version,
+            "test_institutions": sorted(set(g[te].tolist())),
         },
         ART / f"{version}.joblib",
     )
-    # Plain text ACTIVE pointer (D10)
-    (ART / "ACTIVE").write_text(version)
 
-    with engine.begin() as c:
-        c.execute(text("UPDATE model_versions SET status='retired' WHERE kind='overlap' AND status='active'"))
-        c.execute(
-            text("""
-                INSERT INTO model_versions (id, kind, trained_on, metrics, status)
-                VALUES (:i, 'overlap', :t, CAST(:m AS jsonb), 'active')
-            """),
-            {"i": version, "t": "synthetic seed", "m": json.dumps(metrics)},
-        )
-        for name, val, origin in [
-            ("overlap_threshold_high", sel["t_high"], sel["high_origin"]),
-            ("overlap_threshold_medium", sel["t_med"], sel["med_origin"]),
-        ]:
+    from ml.promote import publication_connection, write_active_pointer
+    with publication_connection() as connection:
+        with connection.begin():
+            c = connection
+            if not shadow:
+                c.execute(text("UPDATE model_versions SET status='retired' WHERE kind='overlap' AND status='active'"))
             c.execute(
                 text("""
-                    INSERT INTO parameter_registry (parameter, value, origin, derived_from, metrics, model_version)
-                    VALUES (:p, :v, :o, :d, CAST(:m AS jsonb), :mv)
+                    INSERT INTO model_versions (id, kind, trained_on, metrics, status)
+                    VALUES (:i, 'overlap', :t, CAST(:m AS jsonb), :status)
                 """),
-                {
-                    "p": name,
-                    "v": f"{val:.4f}",
-                    "o": origin,
-                    "mv": version,
-                    "m": json.dumps(metrics),
-                    "d": f"out-of-fold; target precision {TARGET_PRECISION_HIGH} / recall {TARGET_RECALL_MEDIUM}",
-                },
+                {"i": version, "t": "synthetic seed", "m": json.dumps(metrics), "status": "shadow" if shadow else "active"},
             )
+            for name, val, origin in ([] if shadow else [
+                ("overlap_threshold_high", sel["t_high"], sel["high_origin"]),
+                ("overlap_threshold_medium", sel["t_med"], sel["med_origin"]),
+            ]):
+                c.execute(
+                    text("""
+                        INSERT INTO parameter_registry (parameter, value, origin, derived_from, metrics, model_version)
+                        VALUES (:p, :v, :o, :d, CAST(:m AS jsonb), :mv)
+                    """),
+                    {
+                        "p": name,
+                        "v": f"{val:.4f}",
+                        "o": origin,
+                        "mv": version,
+                        "m": json.dumps(metrics),
+                        "d": f"out-of-fold; target precision {TARGET_PRECISION_HIGH} / recall {TARGET_RECALL_MEDIUM}",
+                    },
+                )
 
-    print(json.dumps(metrics, indent=2))
+        if not shadow:
+            write_active_pointer(version)
+    print(json.dumps({"version": version, "status": "shadow" if shadow else "active", **metrics}, indent=2))
 
     # Interpretation rules
     high_prec = metrics["high"]["precision"]
@@ -231,4 +246,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--shadow", action="store_true")
+    main(shadow=parser.parse_args().shadow)
