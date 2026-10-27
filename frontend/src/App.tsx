@@ -11,6 +11,7 @@ import ReportsPage from './pages/ReportsPage'
 import AdminPage from './pages/AdminPage'
 import ImportPage from './pages/Import'
 import UiGallery from './pages/UiGallery'
+import LandingPage from './pages/LandingPage'
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem('token')
@@ -21,6 +22,8 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <Routes>
+      {/* Public routes - no auth required */}
+      <Route path="/landing" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/" element={<RequireAuth><Layout /></RequireAuth>}>
         <Route index element={<DashboardPage />} />
