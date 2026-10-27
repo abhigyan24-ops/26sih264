@@ -3,7 +3,8 @@ import { useQuery } from '@tanstack/react-query'
 import { loadPolicy, loadLedger, usePolicyChange } from '../../api/privacy'
 import type { Scope } from '../../api/privacy'
 import { me } from '../../lib/api'
-import { Shield, Lock, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ModeToggle } from '../../ui/ModeToggle'
+import { Shield, Lock, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react'
 
 export default function PrivacyTab() {
   const [offset, setOffset] = useState(0)
@@ -23,81 +24,102 @@ export default function PrivacyTab() {
   const update = usePolicyChange()
 
   if (policy.isPending) {
-    return <p className="text-xs text-slate-400 font-mono">Loading privacy policy…</p>
+    return <p className="text-xs text-[#5B6068] font-mono p-4">Loading privacy policy…</p>
   }
   if (policy.isError) {
-    return <p role="alert" className="chip chip-danger text-xs font-mono">Could not load privacy policy configuration.</p>
+    return (
+      <div role="alert" className="p-4 bg-[#FDECEA] border border-[#F8B7B2] rounded-[6px] text-xs text-[#B42318] font-mono flex items-center gap-2">
+        <AlertCircle size={15} />
+        <span>Could not load privacy policy configuration.</span>
+      </div>
+    )
   }
 
   const settings = policy.data.settings
+  const scopes: Scope[] = ['global', 'email', 'explain', 'enrich']
 
   return (
     <div className="space-y-6">
       {/* Policy Table Panel */}
-      <section className="panel bg-slate-900 border border-slate-800 rounded p-4 space-y-3">
-        <div className="border-b border-slate-800 pb-2">
-          <h2 className="text-sm font-semibold text-slate-200 uppercase tracking-wide flex items-center gap-2">
-            <Shield size={16} className="text-blue-500" />
+      <section className="bg-[#FFFFFF] border border-[#DAD6CC] rounded-[6px] p-5 space-y-4">
+        <div className="border-b border-[#DAD6CC] pb-3">
+          <h2 className="text-sm font-semibold text-[#1B1F24] flex items-center gap-2 uppercase tracking-wide">
+            <Shield size={16} className="text-[#1F3A5F]" />
             Data Privacy & Egress Governance Policy
           </h2>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-[#5B6068] mt-1">
             Strict fail-closed enforcement: sensitive complaints are unconditionally air-gapped. External services operate via redacted local stubs.
           </p>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="gov-table">
+          <table className="w-full text-xs text-left">
             <thead>
-              <tr>
-                <th className="text-left">Capability Scope</th>
-                <th className="text-left">Configured Value</th>
-                <th className="text-left">Effective Route</th>
-                <th className="text-left">Last Modified</th>
-                <th className="text-right">Policy Action</th>
+              <tr className="border-b border-[#DAD6CC] text-[#5B6068] text-[11px] font-semibold uppercase tracking-wider bg-[#F6F5F1]">
+                <th className="py-2.5 px-3">Capability Scope</th>
+                <th className="py-2.5 px-3">Configured Value</th>
+                <th className="py-2.5 px-3">Effective Route</th>
+                <th className="py-2.5 px-3">Last Modified</th>
+                <th className="py-2.5 px-3 text-right">Physical Mode Switch</th>
               </tr>
             </thead>
-            <tbody>
-              {(['global', 'email', 'explain', 'enrich'] as Scope[]).map((scope) => {
+            <tbody className="divide-y divide-[#DAD6CC]">
+              {scopes.map((scope) => {
                 const row = settings.find((item) => item.scope === scope)
                 const globalValue = settings.find((item) => item.scope === 'global')?.value ?? 'offline'
                 const effective = row?.value ?? globalValue
                 const isOnline = effective === 'online'
+                const isAdmin = user.data?.role === 'admin'
 
                 return (
-                  <tr key={scope} className="border-t border-slate-800/80">
-                    <td className="py-2.5 font-mono font-bold text-slate-200 capitalize">
+                  <tr key={scope} className="hover:bg-[#F6F5F1] transition-colors">
+                    <td className="py-3 px-3 font-mono font-semibold text-[#1B1F24] capitalize">
                       {scope}
                     </td>
-                    <td className="py-2.5 font-mono text-slate-300">
+                    <td className="py-3 px-3 font-mono">
                       {row?.value ? (
-                        <span className={`chip ${isOnline ? 'chip-warning' : 'chip-success'}`}>
+                        <span
+                          className={`inline-block px-2 py-0.5 rounded-[4px] border text-[10px] font-semibold ${
+                            isOnline
+                              ? 'bg-[#FFF3E0] text-[#9A4A00] border-[#FCD299]'
+                              : 'bg-[#E6F4EC] text-[#067647] border-[#A8E2C2]'
+                          }`}
+                        >
                           {row.value.toUpperCase()}
                         </span>
                       ) : (
-                        <span className="text-slate-500 font-mono text-[11px]">Inherited</span>
+                        <span className="text-[#5B6068] font-mono text-[11px]">Inherited</span>
                       )}
                     </td>
-                    <td className="py-2.5 font-mono">
-                      <span className={`chip ${isOnline ? 'chip-warning' : 'chip-success'}`}>
+                    <td className="py-3 px-3 font-mono">
+                      <span
+                        className={`inline-block px-2 py-0.5 rounded-[4px] border text-[10px] font-semibold ${
+                          effective === 'online'
+                            ? 'bg-[#FFF3E0] text-[#9A4A00] border-[#FCD299]'
+                            : 'bg-[#E6F4EC] text-[#067647] border-[#A8E2C2]'
+                        }`}
+                      >
                         {effective.toUpperCase()}
                       </span>
                     </td>
-                    <td className="py-2.5 font-mono text-slate-400 text-[11px]">
+                    <td className="py-3 px-3 font-mono text-[#5B6068] text-[11px]">
                       {row ? new Date(row.changed_at).toLocaleString() : 'System Default'}
                     </td>
-                    <td className="py-2.5 text-right">
-                      {user.data?.role === 'admin' ? (
-                        <button
-                          className="btn-secondary text-[11px] py-1 px-2.5"
-                          disabled={update.isPending}
-                          onClick={() =>
-                            update.change(scope, effective === 'online' ? 'offline' : 'online')
-                          }
-                        >
-                          Switch to {effective === 'online' ? 'Offline' : 'Online'}
-                        </button>
+                    <td className="py-3 px-3 text-right">
+                      {isAdmin ? (
+                        <div className="inline-flex items-center justify-end">
+                          <ModeToggle
+                            mode={effective === 'online' ? 'online' : 'offline'}
+                            onToggle={() =>
+                              update.change(scope, effective === 'online' ? 'offline' : 'online')
+                            }
+                            disabled={update.isPending}
+                            size="sm"
+                            showIndicator={true}
+                          />
+                        </div>
                       ) : (
-                        <span className="text-slate-500 text-[11px] font-mono">Admin Only</span>
+                        <span className="text-[#5B6068] text-[11px] font-mono">Admin Only</span>
                       )}
                     </td>
                   </tr>
@@ -108,7 +130,7 @@ export default function PrivacyTab() {
         </div>
 
         {update.isError && (
-          <p role="alert" className="chip chip-danger text-xs font-mono mt-2">
+          <p role="alert" className="p-3 bg-[#FDECEA] border border-[#F8B7B2] text-[#B42318] text-xs font-mono rounded-[4px]">
             Policy modification failed; previous configuration restored automatically.
           </p>
         )}
@@ -116,76 +138,86 @@ export default function PrivacyTab() {
 
       {/* Egress Ledger Audit Panel */}
       {canRead && (
-        <section className="panel bg-slate-900 border border-slate-800 rounded p-4 space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+        <section className="bg-[#FFFFFF] border border-[#DAD6CC] rounded-[6px] p-5 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#DAD6CC] pb-3 gap-2">
             <div>
-              <h2 className="text-sm font-semibold text-slate-200 uppercase tracking-wide flex items-center gap-2">
-                <Lock size={16} className="text-amber-500" />
+              <h2 className="text-sm font-semibold text-[#1B1F24] flex items-center gap-2 uppercase tracking-wide">
+                <Lock size={16} className="text-[#9A4A00]" />
                 Immutable Egress Audit Ledger
               </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-[#5B6068] mt-1">
                 Every external dispatch attempt, circuit breaker block, and PII redaction event is committed to this append-only ledger.
               </p>
             </div>
-            <span className="text-xs font-mono text-slate-400">
-              Total Recorded: <strong className="text-slate-200">{ledger.data?.total ?? 0}</strong>
+            <span className="text-xs font-mono text-[#5B6068] shrink-0">
+              Total Recorded: <strong className="text-[#1B1F24]">{ledger.data?.total ?? 0}</strong>
             </span>
           </div>
 
           {ledger.isPending ? (
-            <p className="text-xs font-mono text-slate-400 py-6 text-center">Loading egress ledger log…</p>
+            <p className="text-xs font-mono text-[#5B6068] py-8 text-center">Loading egress ledger log…</p>
           ) : ledger.isError ? (
-            <p role="alert" className="chip chip-danger text-xs font-mono">Could not retrieve egress ledger log.</p>
+            <p role="alert" className="p-3 bg-[#FDECEA] border border-[#F8B7B2] text-[#B42318] text-xs font-mono rounded-[4px]">
+              Could not retrieve egress ledger log.
+            </p>
           ) : ledger.data.data.length === 0 ? (
-            <div className="py-8 text-center text-xs text-slate-500 font-mono">
+            <div className="py-8 text-center text-xs text-[#5B6068] font-mono">
               No egress dispatches recorded. System running completely local.
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="gov-table">
+              <table className="w-full text-xs text-left">
                 <thead>
-                  <tr>
-                    <th>Timestamp</th>
-                    <th>Capability</th>
-                    <th>Destination</th>
-                    <th>Payload Type</th>
-                    <th>Mode</th>
-                    <th>Outcome</th>
-                    <th>PII Redacted</th>
+                  <tr className="border-b border-[#DAD6CC] text-[#5B6068] text-[11px] font-semibold uppercase tracking-wider bg-[#F6F5F1]">
+                    <th className="py-2 px-3">Timestamp</th>
+                    <th className="py-2 px-3">Capability</th>
+                    <th className="py-2 px-3">Destination</th>
+                    <th className="py-2 px-3">Payload Type</th>
+                    <th className="py-2 px-3">Mode</th>
+                    <th className="py-2 px-3">Outcome</th>
+                    <th className="py-2 px-3">PII Redacted</th>
                   </tr>
                 </thead>
-                <tbody className="font-mono text-[11px]">
+                <tbody className="divide-y divide-[#DAD6CC] font-mono text-[11px]">
                   {ledger.data.data.map((row) => (
-                    <tr key={row.id}>
-                      <td className="text-slate-400">
+                    <tr key={row.id} className="hover:bg-[#F6F5F1] transition-colors">
+                      <td className="py-2.5 px-3 text-[#5B6068]">
                         {row.created_at ? new Date(row.created_at).toLocaleString() : '—'}
                       </td>
-                      <td className="font-bold text-slate-300">{row.capability}</td>
-                      <td className="text-slate-400">{row.destination}</td>
-                      <td className="text-slate-400">{row.payload_kind}</td>
-                      <td>
+                      <td className="py-2.5 px-3 font-semibold text-[#1B1F24]">{row.capability}</td>
+                      <td className="py-2.5 px-3 text-[#5B6068]">{row.destination}</td>
+                      <td className="py-2.5 px-3 text-[#5B6068]">{row.payload_kind}</td>
+                      <td className="py-2.5 px-3">
                         <span
-                          className={`chip ${
-                            row.mode === 'online' ? 'chip-warning' : 'chip-neutral'
+                          className={`inline-block px-1.5 py-0.5 rounded-[4px] border text-[10px] ${
+                            row.mode === 'online'
+                              ? 'bg-[#FFF3E0] text-[#9A4A00] border-[#FCD299]'
+                              : 'bg-[#EFEDE7] text-[#5B6068] border-[#DAD6CC]'
                           }`}
                         >
                           {row.mode}
                         </span>
                       </td>
-                      <td>
+                      <td className="py-2.5 px-3">
                         <span
-                          className={`chip ${
-                            row.outcome === 'blocked' ? 'chip-danger' : 'chip-success'
+                          className={`inline-block px-1.5 py-0.5 rounded-[4px] border text-[10px] ${
+                            row.outcome === 'blocked'
+                              ? 'bg-[#FDECEA] text-[#B42318] border-[#F8B7B2]'
+                              : 'bg-[#E6F4EC] text-[#067647] border-[#A8E2C2]'
                           }`}
                         >
                           {row.outcome}
                         </span>
                       </td>
-                      <td>
+                      <td className="py-2.5 px-3">
                         {row.redacted ? (
-                          <span className="chip chip-success">YES</span>
+                          <span className="inline-block px-1.5 py-0.5 rounded-[4px] bg-[#E6F4EC] text-[#067647] border border-[#A8E2C2] text-[10px] font-semibold">
+                            YES
+                          </span>
                         ) : (
-                          <span className="chip chip-neutral">NO</span>
+                          <span className="inline-block px-1.5 py-0.5 rounded-[4px] bg-[#EFEDE7] text-[#5B6068] border border-[#DAD6CC] text-[10px]">
+                            NO
+                          </span>
                         )}
                       </td>
                     </tr>
@@ -196,9 +228,10 @@ export default function PrivacyTab() {
           )}
 
           {/* Pagination */}
-          <div className="flex justify-between items-center text-xs text-slate-400 pt-2 border-t border-slate-800">
+          <div className="flex justify-between items-center text-xs text-[#5B6068] pt-2 border-t border-[#DAD6CC]">
             <button
-              className="btn-secondary py-1 px-2.5 text-[11px]"
+              type="button"
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-[#1B1F24] bg-[#FFFFFF] border border-[#DAD6CC] hover:bg-[#EFEDE7] rounded-[4px] disabled:opacity-50 disabled:pointer-events-none transition-colors"
               disabled={offset === 0}
               onClick={() => setOffset(Math.max(0, offset - 20))}
             >
@@ -209,7 +242,8 @@ export default function PrivacyTab() {
               Page {Math.floor(offset / 20) + 1} of {Math.max(1, Math.ceil((ledger.data?.total ?? 0) / 20))}
             </span>
             <button
-              className="btn-secondary py-1 px-2.5 text-[11px]"
+              type="button"
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-[#1B1F24] bg-[#FFFFFF] border border-[#DAD6CC] hover:bg-[#EFEDE7] rounded-[4px] disabled:opacity-50 disabled:pointer-events-none transition-colors"
               disabled={!ledger.data || offset + 20 >= ledger.data.total}
               onClick={() => setOffset(offset + 20)}
             >
