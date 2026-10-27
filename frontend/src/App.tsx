@@ -10,6 +10,7 @@ import AlertsPage from './pages/AlertsPage'
 import ReportsPage from './pages/ReportsPage'
 import AdminPage from './pages/AdminPage'
 import ImportPage from './pages/Import'
+import UiGallery from './pages/UiGallery'
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem('token')
@@ -32,6 +33,8 @@ export default function App() {
         <Route path="import" element={<ImportPage />} />
         <Route path="admin" element={<AdminPage />} />
       </Route>
+      {/* Dev-only UI component gallery */}
+      {import.meta.env.DEV && <Route path="/__ui" element={<UiGallery />} />}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
