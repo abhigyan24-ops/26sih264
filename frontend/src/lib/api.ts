@@ -1,7 +1,7 @@
 import axios from 'axios'
 import type { CaseSummary, FilterMeta, ResolveInstitutionResult, CaseCreateResponse } from './types'
 
-const api = axios.create({ baseURL: '/api' })
+const api = axios.create({ baseURL: import.meta.env.VITE_API_URL || '/api' })
 
 // Attach token from localStorage to every request
 api.interceptors.request.use(cfg => {
