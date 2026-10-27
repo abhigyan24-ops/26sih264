@@ -1,3 +1,4 @@
+import { LockKeyhole } from 'lucide-react'
 // src/lib/format.tsx — FD3
 // Format helpers, badge components, hooks.
 // Dates parsed without new Date("YYYY-MM-DD") to avoid timezone shifts.
@@ -105,7 +106,7 @@ export function SlaBadge({ daysRemaining, closed }: { daysRemaining: number | nu
 export function SensitiveBadge() {
   return (
     <span className="inline-flex items-center text-xs px-2 py-0.5 rounded-full bg-rose-900/40 text-rose-300 border border-rose-700/40 font-medium">
-      🔒 Sensitive
+      <LockKeyhole size={12} className="mr-1" aria-hidden="true" /> Sensitive
     </span>
   )
 }

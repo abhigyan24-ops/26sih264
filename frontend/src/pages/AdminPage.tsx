@@ -1,28 +1,25 @@
+import { usePolicyChange } from '../api/privacy'
 import { useState } from 'react'
 import PrivacyTab from '../components/admin/PrivacyTab'
 import EvaluationTab from '../components/admin/EvaluationTab'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { Shield, Database, Activity, ToggleLeft, ToggleRight } from 'lucide-react'
-import { getPolicy, setPolicy, getModelVersions, getParameterRegistry, getEvaluationReport } from '../lib/api'
+import { getPolicy, getModelVersions, getParameterRegistry, getEvaluationReport } from '../lib/api'
 
 export default function AdminPage() {
   const [tab, setTab] = useState<'overview' | 'privacy' | 'evaluation'>('overview')
-  const qc = useQueryClient()
   const { data: policyData } = useQuery({ queryKey: ['policy'], queryFn: getPolicy })
   const { data: models = [] } = useQuery({ queryKey: ['models'], queryFn: getModelVersions })
   const { data: params = [] } = useQuery({ queryKey: ['params'], queryFn: getParameterRegistry })
   const { data: evalReport } = useQuery({ queryKey: ['eval-report'], queryFn: getEvaluationReport })
 
-  const updatePolicy = useMutation({
-    mutationFn: ({ scope, value }: { scope: string; value: string }) => setPolicy(scope, value),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['policy'] })
-  })
+  const updatePolicy = usePolicyChange()
 
   const settings: any[] = policyData?.settings || []
   const globalMode = settings.find(s => s.scope === 'global')?.value || 'offline'
 
   const toggleGlobal = () => {
-    updatePolicy.mutate({ scope: 'global', value: globalMode === 'online' ? 'offline' : 'online' })
+    updatePolicy.change('global', globalMode === 'online' ? 'offline' : 'online')
   }
 
   const user = JSON.parse(localStorage.getItem('user') || '{}')

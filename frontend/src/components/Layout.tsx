@@ -1,3 +1,4 @@
+import ModeBar from './ModeBar'
 import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
@@ -155,10 +156,7 @@ export default function Layout() {
           </button>
 
           <div className="flex items-center gap-4">
-            {/* ── Stage 9 mode bar slot ────────────────────────────────────
-                This space is reserved for the offline/online mode bar added in Stage 9.
-                Do NOT render any mode or connectivity status here until Stage 9.
-            ──────────────────────────────────────────────────────────────── */}
+            <ModeBar isAdmin={role === 'admin'} />
 
             {/* Header Bell Notification Icon (T20) */}
             <NavLink
