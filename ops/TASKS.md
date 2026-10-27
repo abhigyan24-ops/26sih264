@@ -277,3 +277,131 @@ Do:
 2. Walk the 7-minute demo flow from the guide against the running app and record each step as PASS/FAIL with evidence: login, dashboard, register the RB case at ABC Engineering College, high overlap appears, link with lead, hold on the other case, alerts for both bureaus, toggle global offline/online, ledger shows no external call, reports page, model card (if present).
 3. `scripts/reset_demo.py`: reseed (and optionally retrain), run the backfill, print the demo steps. `README.md`: setup (uv, Docker, env), run commands (API, web, worker), demo accounts, how to reset, honest limits (synthetic data; Splink only planned).
 4. `docs/reports/FINAL.md`: a table of every task with status (DONE/PARTIAL/BLOCKED/NOT STARTED), the demo walkthrough results, known issues, and "what the human must check in the morning" (the union of all `## Human checks`).
+
+
+---
+
+## B80 Data import adapter (RB, PGRC, regional files)
+Prefer: CX
+Depends: none
+Priority: MUST
+Migration: 070
+Owns: `backend/app/services/ingestion/*`, `backend/app/routers/ingestion.py`, `backend/tests/test_ingestion.py`, `frontend/src/pages/Import.tsx`
+Do: upload a CSV (and optionally XLSX) per source system; a **column mapping** step (source column to schema field, saved per source); row validation with a per-row error report; institution resolution through the existing resolver (rows needing review are held, not guessed); embedding and overlap scan for each imported case through the existing services (no copy of that logic); dry-run mode that shows what would be created; idempotency (same source + source case id never imports twice); an import log table. The real RB/PGRC formats are unknown, so the mapping must be data, not code. Tests: bad rows reported, duplicate file imports nothing new, dry-run writes nothing.
+Checks: import a sample CSV for each source; show counts, errors and the new overlaps found.
+
+---
+
+## B81 Case status machine and workflow actions
+Prefer: CX
+Depends: none
+Priority: MUST
+Owns: `backend/app/services/case_workflow.py`, `backend/app/routers/workflow.py`, `backend/tests/test_workflow.py`
+Read first: what Stage 3 and 5 already implemented (grep status updates); do not duplicate.
+Do: allowed transitions Received → Registered → Assigned → Under process → Action taken → Disposed; reject illegal jumps with 422 and the list of allowed next states; Reopened loops back to Under process; **transfer** (bureau change with remark, history kept), **escalate**, **add remark**; every change writes an `actions` row and an audit row in one transaction; closing sets `closed_date`; role and region scoping as elsewhere. Tests for each legal and illegal transition.
+Checks: walk one case through the full lifecycle by curl and show the timeline.
+
+---
+
+## B82 Admin management and SLA rule editing
+Prefer: ANY
+Depends: none
+Priority: SHOULD
+Owns: `backend/app/routers/admin_manage.py`, `backend/tests/test_admin_manage.py`, `frontend/src/components/admin/OfficersTab.tsx`, `frontend/src/components/admin/BureausTab.tsx`, `frontend/src/components/admin/SlaRulesTab.tsx`
+Do: admin-only CRUD for officers (create, deactivate, reset password, role, bureau, region; bcrypt password limit of 72 bytes handled as a clean 422), bureaus/cells, and `sla_rules` (deadline days, escalate-after, **source reference text** required, change history in audit). Never delete; deactivate. Tests: non-admin 403; deactivated officer cannot log in; rule change is audited.
+
+---
+
+## B83 Sensitive flag, edit rescan, retrain trigger
+Prefer: CX
+Depends: none
+Priority: SHOULD
+Owns: `backend/app/routers/case_extras.py`, `backend/app/services/retrain.py`, `backend/tests/test_case_extras.py`
+Do: (a) `PUT /api/cases/{id}/sensitivity` (officer of that case or admin; audited) so the router's sensitive rule can actually be used; (b) when a case description is edited, re-embed, mark its **suggested** overlap links stale, and rescan (never touch confirmed or dismissed links; never re-alert a dismissed pair); (c) `should_retrain(db)`: true when new link/dismiss labels since the last training reach `retrain_min_labels` and both classes have at least `retrain_min_per_class` (both read via `get_param`, defaults recorded as `default_pending_data`); an admin endpoint reports the state and a button-triggered retrain creates a **shadow** model (never auto-promotes). Document the selection-bias limit (officers only label pairs the model flagged) in the response and in `docs/learning_loop.md`.
+
+---
+
+## B84 Email channel through the router
+Prefer: ANY
+Depends: none
+Priority: NICE
+Owns: `backend/app/services/channels.py`
+Do: in-app alert is always written; an email is attempted only when the router allows `email` online, through the egress gateway with redaction and ledger; a failure falls back to in-app only; the SMTP provider is a stub unless credentials are in `.env`. Tests with the offline route (no email attempted) and a sensitive case.
+
+---
+
+## B85 Audit log API
+Prefer: ANY
+Depends: none
+Priority: SHOULD
+Owns: `backend/app/routers/audit.py`, `frontend/src/components/admin/AuditTab.tsx`
+Do: admin/management read-only paged endpoint with filters (actor, action, entity, date); no update or delete anywhere; an Admin tab. Tests that the table has no write endpoint.
+
+---
+
+## B86 Security hardening (prototype level, honest)
+Prefer: CX
+Depends: none
+Priority: NICE
+Owns: `backend/app/auth.py`, `backend/app/main.py`
+Do: fail to start when `JWT_SECRET` is the default outside a `DEV` flag; login rate limit (in-memory is acceptable, documented); lockout after repeated failures with a time window; security headers; restrict CORS to the configured origin. Document what is **not** done (refresh tokens, MFA, httpOnly cookies, SSO).
+
+---
+
+## B87 Packaging
+Prefer: ANY
+Depends: none
+Priority: SHOULD
+Owns: `backend/Dockerfile`, `docker-compose.yml`, `README.md`
+Do: backend and worker images (Python 3.12, uv, pinned lock file), compose services `api`, `worker`, `web` using the existing `db`; model cache volume so the embedding model is not re-downloaded; healthchecks. Verify `docker compose up` from a clean checkout and write the exact result.
+
+---
+
+## B88 Performance and indexes
+Prefer: CX
+Depends: none
+Priority: NICE
+Migration: 071
+Do: `EXPLAIN ANALYZE` the case list, institution resolve, overlap scan candidate query and reports on the seeded data (and on 10x data generated for the test); add only the indexes that measurably help (record before/after times); never claim speed-ups without the measured output.
+
+---
+
+## B89 Test and CI pass
+Prefer: ANY
+Depends: B80, B81, B82, B83
+Priority: SHOULD
+Do: one command that runs backend tests, `tsc`, build; a GitHub Actions workflow doing the same against a Postgres service with the `vector` extension; list flaky or skipped tests in the report.
+
+---
+
+## F90 Frontend redesign: make it look designed, not generated
+Prefer: AG
+Depends: none
+Priority: MUST
+Owns: `frontend/src/**`
+Do:
+1. **Design tokens first** (`index.css` / Tailwind theme): one neutral scale, one primary, one accent, status colours for open/overdue/disposed and overlap levels (High, Medium, Info) that stay distinguishable without colour alone; a type scale with a real hierarchy (two families at most: one for UI, one tabular/mono for case references and numbers); spacing scale of 4/8; radius 4 to 6px; borders instead of shadows; light theme complete, dark theme only if time allows.
+2. **App shell:** left navigation with grouped sections and the current user and bureau at the bottom, a compact top bar (the mode bar and alert bell from round 1 kept), breadcrumb or page title with the primary action on the right. Keyboard focus visible.
+3. **Operational density:** tables are the main surface: sticky header, right-aligned numbers, status chips (small, text plus colour), row hover, saved filters, column for SLA due with relative time, sensible empty and loading skeletons. KPI strip is compact (label, number, small trend), not four giant cards.
+4. **Overlap review** is the signature screen: two cases side by side with the differing words highlighted, probability as a plain number with the explanation bars labelled as explanation, level badge, decision buttons with clear primary/secondary hierarchy. Keep it readable on a projector.
+5. **Copy:** plain, specific, officer-language labels ("Overlapping cases", "Due in 3 days", "Hold other case"), no marketing phrases, no exclamation marks, no emoji. Error messages say what to do next.
+6. **Consistency pass:** one component for page header, one for filter bar, one for table, one for status chip, one for empty state; delete duplicates. Remove unused CSS and dependencies only if `build` still passes.
+7. **Accessibility basics:** contrast at least 4.5:1 for text, labels on every input, focus rings, no information by colour alone, usable at 1366x768 and at phone width (tables scroll inside their container).
+Checks: `npx tsc --noEmit`, `npm run build`, and screenshots of every page at 1366x768 and 390px width saved under `docs/screenshots/` (if the tool has a browser; otherwise list under `## Human checks`). Show before/after for the overlap review page.
+Report must list the tokens chosen and every page touched. Do not add new UI libraries without need.
+
+---
+
+## F91 Frontend states and polish pass
+Prefer: AG
+Depends: F90
+Priority: SHOULD
+Do: every page has loading skeleton, empty state, error state with retry; forms validate before submit and show field errors; toasts are consistent; 401 returns to login with the previous page remembered; long text truncates with a tooltip; page titles update; no console errors on any page (list the pages checked).
+
+---
+
+## F92 Frontend: new screens for round-2 backend
+Prefer: AG
+Depends: B80, B81, F90
+Priority: SHOULD
+Do: Import page (upload, mapping, dry-run result, error table), case workflow actions on Case detail (allowed next states only, transfer and escalate dialogs), sensitivity toggle with lock icon. Use the F90 components only.

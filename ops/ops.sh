@@ -11,7 +11,7 @@ STALE_MIN=${STALE_MIN:-45}
 
 now() { date +%s; }
 mt() { stat -c %Y "$1" 2>/dev/null || stat -f %m "$1"; }
-ids() { awk '/^## [TR][0-9]+ /{print $2}' "$TASKS"; }
+ids() { awk '/^## [A-Z][0-9]+/ {print $2}' "$TASKS"; }
 card() { awk -v t="$1" '/^## /{p=($2==t)} p' "$TASKS"; }
 field() { card "$1" | awk -v f="$2:" 'index($0,f)==1{sub(f" *","");print;exit}'; }
 state() { if [ -d "$STATE/done/$1" ]; then echo done; elif [ -d "$STATE/claims/$1" ]; then echo claimed; else echo open; fi; }
