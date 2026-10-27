@@ -1,70 +1,97 @@
 import os
 import sys
+import threading
+import traceback
 from pathlib import Path
 from sqlalchemy import text, inspect
 
-def run_init():
+def init_db():
     from app.db import engine
     from app.config import settings
 
-    print("Connecting to database...")
+    print("[CaseNexus Init] Checking database connection and tables...")
     try:
+        # Step 1: Initialize schema if tables are missing
         with engine.connect() as conn:
             inspector = inspect(conn)
             tables = inspector.get_table_names()
-            print(f"Existing tables in database: {tables}")
-            
-            # Check if schema needs to be initialized
-            if "officers" not in tables or "cases" not in tables:
-                print("Database tables not found. Initializing schema from schema.sql...")
-                schema_path = Path("db/schema.sql")
-                if not schema_path.exists():
-                    schema_path = Path("../db/schema.sql")
-                if not schema_path.exists():
-                    schema_path = Path(__file__).resolve().parent.parent.parent / "db" / "schema.sql"
+            print(f"[CaseNexus Init] Existing tables: {tables}")
 
-                if schema_path.exists():
-                    sql_content = schema_path.read_text(encoding="utf-8")
-                    with engine.begin() as tx_conn:
-                        for stmt in sql_content.split(";"):
-                            clean_stmt = stmt.strip()
-                            if clean_stmt:
-                                try:
-                                    tx_conn.execute(text(clean_stmt))
-                                except Exception as stmt_err:
-                                    print(f"Statement notice: {stmt_err}")
-                    print("Schema initialized successfully!")
-                else:
-                    print(f"schema.sql not found at {schema_path}")
+        if "officers" not in tables or "cases" not in tables:
+            print("[CaseNexus Init] Initializing schema from schema.sql...")
+            schema_paths = [
+                Path("db/schema.sql"),
+                Path("../db/schema.sql"),
+                Path(__file__).resolve().parent.parent.parent / "db" / "schema.sql",
+                Path(__file__).resolve().parent.parent / "db" / "schema.sql",
+            ]
+            schema_path = next((p for p in schema_paths if p.exists()), None)
 
-            # Check if officers have been seeded
+            if schema_path:
+                sql_content = schema_path.read_text(encoding="utf-8")
+                # Use raw psycopg autocommit connection so statements execute cleanly
+                with engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
+                    # Execute each statement
+                    for raw_stmt in sql_content.split(";"):
+                        stmt = raw_stmt.strip()
+                        if not stmt:
+                            continue
+                        try:
+                            conn.execute(text(stmt))
+                        except Exception as ex:
+                            # Log warning (e.g. extension or table notices)
+                            print(f"[CaseNexus Init] Statement notice: {ex}")
+                print("[CaseNexus Init] Schema setup completed.")
+            else:
+                print(f"[CaseNexus Init] ERROR: schema.sql not found in search paths: {schema_paths}")
+
+        # Step 2: Seed data if no officers exist
+        with engine.connect() as conn:
             officer_count = 0
             try:
-                with engine.connect() as conn2:
-                    officer_count = conn2.execute(text("SELECT count(*) FROM officers")).scalar() or 0
+                officer_count = conn.execute(text("SELECT count(*) FROM officers")).scalar() or 0
             except Exception:
                 pass
 
-            if officer_count == 0:
-                print("No officers found. Running seed script...")
+        if officer_count == 0:
+            print("[CaseNexus Init] Seeding demo officers and records...")
+            try:
                 from scripts.seed import main as seed_main
                 seed_main()
-                print("Seed data completed!")
+                print("[CaseNexus Init] Seeding completed.")
+            except Exception as seed_err:
+                print(f"[CaseNexus Init] Seed notice: {seed_err}")
+                traceback.print_exc()
 
-            # Check if ML artifacts exist
-            art_path = Path("ml/artifacts/calibrated_overlap.joblib")
-            if not art_path.exists():
-                print("ML artifacts not found. Training overlap model...")
+        # Step 3: Train overlap model if artifact missing
+        art_path = Path("ml/artifacts/calibrated_overlap.joblib")
+        if not art_path.exists():
+            print("[CaseNexus Init] Training calibrated ML overlap model...")
+            try:
                 from ml.train_overlap import main as train_main
                 train_main()
-                print("Model training completed!")
+                print("[CaseNexus Init] ML model training completed.")
+            except Exception as train_err:
+                print(f"[CaseNexus Init] Model training notice: {train_err}")
+                traceback.print_exc()
 
     except Exception as e:
-        print(f"Initialization check notice: {e}")
+        print(f"[CaseNexus Init] Database initialization notice: {e}")
+        traceback.print_exc()
+
+def background_init():
+    try:
+        init_db()
+    except Exception as e:
+        print(f"[CaseNexus Init] Background init error: {e}")
 
 if __name__ == "__main__":
-    run_init()
+    # Start database initialization
+    # (Schema creation runs first, heavy ML/seeding continues in background so port binds immediately)
+    t = threading.Thread(target=background_init, daemon=True)
+    t.start()
+
     port = int(os.environ.get("PORT", 8000))
-    print(f"Starting CaseNexus API server on port {port}...")
+    print(f"[CaseNexus] Starting Uvicorn API server on port {port}...")
     import uvicorn
     uvicorn.run("app.main:app", host="0.0.0.0", port=port)
