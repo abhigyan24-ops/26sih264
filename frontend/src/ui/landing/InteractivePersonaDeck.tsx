@@ -87,18 +87,19 @@ export default function InteractivePersonaDeck() {
 
   return (
     <section
+      id="personas"
       ref={sectionRef}
       aria-label="Interactive stakeholder operational personas"
-      className="py-24 relative overflow-hidden"
+      className="py-14 sm:py-24 relative overflow-hidden"
       style={{ background: '#FAF9F6', borderTop: '1px solid #DAD6CC' }}
     >
-      <div className="max-w-7xl mx-auto px-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {/* Section Header */}
         <motion.div
           initial={{ opacity: 0, y: prefersReduced ? 0 : 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.35, ease: 'easeOut' }}
-          className="max-w-3xl mb-12"
+          className="max-w-3xl mb-8 sm:mb-12"
         >
           <span
             className="text-xs font-mono uppercase tracking-widest text-[#8A4B08] font-semibold block mb-2"
@@ -107,18 +108,18 @@ export default function InteractivePersonaDeck() {
             Multi-Stakeholder Experience
           </span>
           <h2
-            className="text-3xl sm:text-4xl font-semibold tracking-tight text-[#1F3A5F]"
+            className="text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight text-[#1F3A5F]"
             style={{ fontFamily: '"IBM Plex Sans", sans-serif' }}
           >
             Bespoke intelligence tailored for every statutory role.
           </h2>
-          <p className="text-base text-[#5B6068] mt-2">
+          <p className="text-sm sm:text-base text-[#5B6068] mt-2">
             Click through the operational desks below to preview how CaseNexus coordinates regulatory enforcement, grievance redressal, and regional oversight.
           </p>
         </motion.div>
 
         {/* Persona Selectors */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3 mb-6 sm:mb-8">
           {PERSONAS.map((p) => {
             const isSelected = p.id === activeId
             const PIcon = p.icon
@@ -126,32 +127,32 @@ export default function InteractivePersonaDeck() {
               <button
                 key={p.id}
                 onClick={() => setActiveId(p.id)}
-                className={`p-4 rounded-xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between ${
+                className={`p-3 sm:p-4 rounded-xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between ${
                   isSelected
-                    ? 'bg-white border-[#1F3A5F] shadow-md ring-2 ring-[#1F3A5F]/15'
+                    ? 'bg-white border-[#1F3A5F] shadow-xs ring-2 ring-[#1F3A5F]/15'
                     : 'bg-[#F6F5F1] border-[#DAD6CC] hover:bg-white text-[#5B6068] hover:text-[#1B1F24]'
                 }`}
               >
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between mb-2 sm:mb-3">
                   <div
-                    className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors"
+                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition-colors"
                     style={{
                       background: isSelected ? p.badgeColor : '#E2DFD7',
                       color: isSelected ? '#FFFFFF' : '#1B1F24'
                     }}
                   >
-                    <PIcon size={18} />
+                    <PIcon size={16} />
                   </div>
                   {isSelected && (
-                    <span className="text-[10px] font-mono font-bold uppercase text-[#067647] bg-[#E6F4EC] px-2 py-0.5 rounded border border-[#A8E2C2]">
-                      ACTIVE DESK
+                    <span className="text-[9px] sm:text-[10px] font-mono font-bold uppercase text-[#067647] bg-[#E6F4EC] px-1.5 sm:px-2 py-0.5 rounded border border-[#A8E2C2]">
+                      ACTIVE
                     </span>
                   )}
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-semibold text-[#1B1F24] mb-0.5">{p.title}</h3>
-                  <p className="text-xs text-[#5B6068] truncate">{p.role}</p>
+                  <h3 className="text-xs sm:text-sm font-semibold text-[#1B1F24] mb-0.5">{p.title}</h3>
+                  <p className="text-[11px] sm:text-xs text-[#5B6068] truncate">{p.role}</p>
                 </div>
               </button>
             )
@@ -159,7 +160,7 @@ export default function InteractivePersonaDeck() {
         </div>
 
         {/* Dynamic Persona Experience Panel */}
-        <div className="rounded-2xl border border-[#DAD6CC] bg-white p-6 sm:p-8 shadow-xs">
+        <div className="rounded-xl sm:rounded-2xl border border-[#DAD6CC] bg-white p-4 sm:p-6 lg:p-8 shadow-2xs">
           <AnimatePresence mode="wait">
             <motion.div
               key={activePersona.id}
@@ -167,7 +168,7 @@ export default function InteractivePersonaDeck() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.22 }}
-              className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start"
+              className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start"
             >
               {/* Left Column: Role Overview (7 cols) */}
               <div className="lg:col-span-7 space-y-5">

@@ -128,34 +128,35 @@ export default function FeatureGrid() {
 
   return (
     <section
+      id="features"
       aria-label="Features covering all PS 26264 requirements"
-      className="py-24"
+      className="py-14 sm:py-24"
       style={{ background: '#FFFFFF', borderTop: '1px solid #DAD6CC' }}
     >
-      <div className="max-w-7xl mx-auto px-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <motion.div
           ref={headerRef}
           initial={{ opacity: 0, y: prefersReduced ? 0 : 24 }}
           animate={headerInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.32, ease: 'easeOut' }}
-          className="mb-12"
+          className="mb-8 sm:mb-12"
         >
           <span
-            className="text-xs font-mono uppercase tracking-widest mb-3 block"
+            className="text-xs font-mono uppercase tracking-widest mb-2.5 block"
             style={{ color: '#1F3A5F', fontFamily: '"IBM Plex Mono", monospace' }}
           >
             Statutory Scope
           </span>
           <h2
-            className="text-3xl font-semibold leading-tight mb-3"
+            className="text-2xl sm:text-3xl font-semibold leading-tight mb-3"
             style={{ color: '#1F3A5F', fontFamily: '"IBM Plex Sans", sans-serif' }}
           >
             All eight required areas — built and verified.
           </h2>
-          <p className="text-base max-w-2xl" style={{ color: '#5B6068' }}>
+          <p className="text-sm sm:text-base max-w-2xl text-[#5B6068]">
             Every item from PS 26264 is implemented, tested and running.{' '}
             <span
-              className="font-mono text-sm"
+              className="font-mono text-xs sm:text-sm"
               style={{ color: '#067647', fontFamily: '"IBM Plex Mono", monospace' }}
             >
               114 / 114 tests passing.
@@ -165,7 +166,7 @@ export default function FeatureGrid() {
 
         <div
           ref={gridRef}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5"
         >
           {FEATURES.map((feat, i) => (
             <FeatureTile

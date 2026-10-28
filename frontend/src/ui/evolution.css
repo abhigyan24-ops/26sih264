@@ -1,0 +1,11 @@
+.cn-ticker-track { animation: cn-ticker 65s linear infinite; }
+@keyframes cn-ticker { to { transform: translateX(-50%); } }
+.cn-radar-ring { transform-box: fill-box; transform-origin: center; animation: cn-radar 3s ease-out infinite; }
+@keyframes cn-radar { 0% { transform: scale(.7); opacity: .5; } 100% { transform: scale(1.8); opacity: 0; } }
+.cn-intake-range { touch-action: pan-y; }
+.cn-investigation { margin: 0 0 0 auto; max-height: 100dvh; max-width: min(100vw, 520px); height: 100dvh; width: 520px; padding: 0; border: 0; background: transparent; color: #1B1F24; }
+.cn-investigation::backdrop { background: rgb(20 35 58 / .48); backdrop-filter: blur(3px); }
+@media (prefers-reduced-motion: reduce) {
+  .cn-evolution *, .cn-evolution *::before, .cn-evolution *::after { animation: none !important; scroll-behavior: auto !important; }
+  .cn-ticker-track, .cn-radar-ring { animation: none !important; }
+}

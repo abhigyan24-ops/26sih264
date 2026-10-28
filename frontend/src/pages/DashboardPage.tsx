@@ -1,4 +1,9 @@
 import { useState } from 'react'
+import { LayoutGroup, MotionConfig, motion, useReducedMotion } from 'motion/react'
+import RegionalHeatMap from '../ui/dashboard/RegionalHeatMap'
+import TelemetryTape from '../ui/dashboard/TelemetryTape'
+import HudSwitch from '../ui/dashboard/HudSwitch'
+import '../ui/evolution.css'
 import { useQuery } from '@tanstack/react-query'
 import {
   BarChart,
@@ -7,8 +12,6 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
   Cell,
   CartesianGrid,
 } from 'recharts'
@@ -26,15 +29,13 @@ import {
   Scale,
   Lock,
   Layers,
-  ChevronRight,
-  Database
+  ChevronRight
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { getDashboard } from '../lib/api'
 import { ErrorState, Skeleton } from '../ui'
 
 // Civic Ledger Categorical & Status Palettes
-const CATEGORICAL_COLORS = ['#1F3A5F', '#8A4B08', '#067647', '#175CD3', '#5B6068']
 const BUCKET_COLORS = ['#067647', '#175CD3', '#8A4B08', '#eb6834', '#B42318']
 
 const TOOLTIP_STYLE = {
@@ -49,6 +50,8 @@ const TOOLTIP_STYLE = {
 export default function DashboardPage() {
   const [activeDeckTab, setActiveDeckTab] = useState<'bureau' | 'region' | 'ageing'>('bureau')
   const [showTable, setShowTable] = useState(false)
+  const [animateRadar, setAnimateRadar] = useState(true)
+  const reduced = useReducedMotion()
 
   const {
     data,
@@ -112,7 +115,8 @@ export default function DashboardPage() {
   const pgrcStats = byBureau.find(b => b.bureau === 'PGRC') ?? { open: 0, overdue: 0, closed: 0 }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6 animate-fade-in font-sans">
+    <MotionConfig reducedMotion="user"><LayoutGroup id="command-center">
+    <div className="cn-evolution p-4 sm:p-6 max-w-7xl mx-auto space-y-6 font-sans">
       
       {/* 1. TACTILE COMMAND DECK HEADER */}
       <div className="bg-[#FFFFFF] border border-[#DAD6CC] rounded-xl p-5 shadow-xs flex flex-wrap items-center justify-between gap-4 relative overflow-hidden">
@@ -140,7 +144,7 @@ export default function DashboardPage() {
               </span>
             </div>
             <p className="text-xs text-[#5B6068] mt-0.5">
-              Sovereign monitoring across Regulation Bureau, Public Grievance Redressal Cell &amp; 5 Regional Hubs.
+              Sovereign monitoring across Regulation Bureau, Public Grievance Redressal Cell &amp; Regional Offices.
             </p>
           </div>
         </div>
@@ -247,7 +251,7 @@ export default function DashboardPage() {
             </div>
             <div>
               <span className="text-2xl font-mono font-bold text-[#1F3A5F]">
-                {overlaps.total_suggested ?? 0} Overlaps Tracked
+                {(overlaps.high_open ?? 0) + (overlaps.medium_open ?? 0) + (overlaps.confirmed ?? 0) + (overlaps.dismissed ?? 0)} Overlaps Tracked
               </span>
               <p className="text-xs text-[#5B6068] mt-0.5 max-w-xs">
                 Real-time cross-matching prevents dual punitive notices on the same technical campus.
@@ -329,182 +333,65 @@ export default function DashboardPage() {
         })}
       </div>
 
-      {/* 5. STRATEGIC VISUALIZATION DECK (INTERACTIVE VIEWS) */}
-      <div className="bg-[#FFFFFF] border border-[#DAD6CC] rounded-xl p-5 shadow-xs space-y-4">
-        {/* Interactive Deck Mode Selector Header */}
-        <div className="flex flex-wrap items-center justify-between border-b border-[#DAD6CC] pb-3 gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#1F3A5F] flex items-center gap-1.5">
-              <Layers size={14} />
-              Strategic Analytics Deck
-            </span>
-          </div>
 
-          <div className="flex items-center gap-2">
-            <div className="flex rounded-lg border border-[#DAD6CC] p-0.5 bg-[#FAF9F6] text-xs font-mono">
-              <button
-                onClick={() => setActiveDeckTab('bureau')}
-                className={`px-3 py-1 rounded-md transition-all ${
-                  activeDeckTab === 'bureau'
-                    ? 'bg-[#1F3A5F] text-white shadow-xs font-semibold'
-                    : 'text-[#5B6068] hover:text-[#1B1F24]'
-                }`}
-              >
-                Bureau Balance
-              </button>
-              <button
-                onClick={() => setActiveDeckTab('region')}
-                className={`px-3 py-1 rounded-md transition-all ${
-                  activeDeckTab === 'region'
-                    ? 'bg-[#1F3A5F] text-white shadow-xs font-semibold'
-                    : 'text-[#5B6068] hover:text-[#1B1F24]'
-                }`}
-              >
-                Regional Jurisdiction
-              </button>
-              <button
-                onClick={() => setActiveDeckTab('ageing')}
-                className={`px-3 py-1 rounded-md transition-all ${
-                  activeDeckTab === 'ageing'
-                    ? 'bg-[#1F3A5F] text-white shadow-xs font-semibold'
-                    : 'text-[#5B6068] hover:text-[#1B1F24]'
-                }`}
-              >
-                SLA Ageing Curve
-              </button>
+      {/* Strategic visualization deck: API-derived data, accessible view controls. */}
+      <div className="rounded-xl border border-[#DAD6CC] bg-white p-4 shadow-sm sm:p-5">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-4 border-b border-[#DAD6CC] pb-4">
+          <h2 className="flex items-center gap-2 font-mono text-xs font-semibold uppercase tracking-wider text-[#1F3A5F]"><Layers size={14} /> Strategic analytics deck</h2>
+          <HudSwitch label="Radar pulses" checked={animateRadar && !reduced} disabled={Boolean(reduced)} onChange={setAnimateRadar} />
+        </div>
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <div aria-label="Analytics dataset" className="flex max-w-full flex-wrap gap-1 rounded-lg border border-[#DAD6CC] bg-[#F6F5F1] p-1">
+            {([{ id: 'bureau', label: 'Bureau Balance' }, { id: 'region', label: 'Regional Spatial Heat' }, { id: 'ageing', label: 'SLA Ageing' }] as const).map(tab => <button type="button" key={tab.id} onClick={() => setActiveDeckTab(tab.id)} aria-pressed={activeDeckTab === tab.id} className={`relative rounded-md px-3 py-2 text-[11px] ${activeDeckTab === tab.id ? 'text-white' : 'text-[#5B6068]'}`}>{activeDeckTab === tab.id && <motion.span layoutId={reduced ? undefined : 'deck-tab'} transition={{ type: 'spring', stiffness: 350, damping: 30 }} className="absolute inset-0 rounded-md bg-[#1F3A5F]" />}<span className="relative">{tab.label}</span></button>)}
+          </div>
+          <div aria-label="Analytics presentation" className="flex gap-1 rounded-lg border border-[#DAD6CC] p-1">
+            {[false, true].map(table => <button type="button" key={String(table)} aria-pressed={showTable === table} onClick={() => setShowTable(table)} className={`relative rounded px-3 py-2 text-[11px] ${showTable === table ? 'text-[#1F3A5F]' : 'text-[#5B6068]'}`}>{showTable === table && <motion.span layoutId={reduced ? undefined : 'deck-view'} className="absolute inset-0 rounded bg-[#EFEDE7]" />}<span className="relative">{table ? 'Ledger Table' : 'Visual Deck'}</span></button>)}
+          </div>
+        </div>
+        <motion.div key={`${activeDeckTab}-${showTable}`} initial={{ opacity: reduced ? 1 : 0, y: reduced ? 0 : 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+          {showTable ? (
+            <div className="overflow-x-auto rounded-lg border border-[#DAD6CC]">
+              <table className="w-full text-left font-mono text-xs">
+                <caption className="sr-only">{activeDeckTab === 'bureau' ? 'Bureau workload' : activeDeckTab === 'region' ? 'Regional case counts' : 'Open case ageing'}</caption>
+                <thead className="border-b border-[#DAD6CC] bg-[#F6F5F1] text-[#5B6068]">
+                  <tr>{(activeDeckTab === 'bureau' ? ['Bureau', 'Active', 'Breached SLA', 'Disposed'] : activeDeckTab === 'region' ? ['Region', 'Active', 'Total complaints'] : ['Age bucket (days)', 'Open cases']).map(label => <th scope="col" key={label} className="p-3">{label}</th>)}</tr>
+                </thead>
+                <tbody className="divide-y divide-[#DAD6CC] text-[#1B1F24]">
+                  {activeDeckTab === 'bureau' && byBureau.map(row => <tr key={row.bureau}><th scope="row" className="p-3 text-left">{row.bureau}</th><td className="p-3">{row.open}</td><td className="p-3 text-[#B42318]">{row.overdue}</td><td className="p-3">{row.closed}</td></tr>)}
+                  {activeDeckTab === 'region' && byRegion.map(row => <tr key={row.region}><th scope="row" className="p-3 text-left">{row.region}</th><td className="p-3">{row.open}</td><td className="p-3">{row.total ?? 'Not reported'}</td></tr>)}
+                  {activeDeckTab === 'ageing' && ageing.map(row => <tr key={row.bucket}><th scope="row" className="p-3 text-left">{row.bucket}</th><td className="p-3">{row.n}</td></tr>)}
+                  {(activeDeckTab === 'bureau' ? byBureau : activeDeckTab === 'region' ? byRegion : ageing).length === 0 && <tr><td colSpan={4} className="p-6 text-center text-[#5B6068]">No data reported for this view.</td></tr>}
+                </tbody>
+              </table>
             </div>
-
-            <button
-              onClick={() => setShowTable(!showTable)}
-              className="text-xs font-mono px-3 py-1.5 rounded-lg border border-[#DAD6CC] bg-[#FAF9F6] hover:bg-[#EFEDE7] text-[#1B1F24] transition-colors"
-            >
-              {showTable ? 'View Visual Chart' : 'Show Data Table'}
-            </button>
-          </div>
-        </div>
-
-        {/* Dynamic Visual Surface */}
-        {!showTable ? (
-          <div className="h-64 w-full pt-2">
-            {activeDeckTab === 'bureau' && (
+          ) : activeDeckTab === 'region' ? <RegionalHeatMap regions={byRegion} animate={animateRadar} /> : (
+            <div className="h-64 w-full pt-2">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={byBureau} barGap={3} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#F0EEE9" />
-                  <XAxis dataKey="bureau" stroke="#5B6068" fontSize={11} tickLine={false} />
-                  <YAxis stroke="#5B6068" fontSize={11} tickLine={false} />
-                  <Tooltip contentStyle={TOOLTIP_STYLE} />
-                  <Bar dataKey="open" name="Active Open" fill="#1F3A5F" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="overdue" name="Breached SLA" fill="#B42318" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="closed" name="Disposed" fill="#067647" radius={[4, 4, 0, 0]} />
-                </BarChart>
+                {activeDeckTab === 'bureau' ? (
+                  <BarChart data={byBureau} barGap={3} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#F0EEE9" />
+                    <XAxis dataKey="bureau" stroke="#5B6068" fontSize={11} tickLine={false} /><YAxis stroke="#5B6068" fontSize={11} tickLine={false} />
+                    <Tooltip contentStyle={TOOLTIP_STYLE} />
+                    <Bar dataKey="open" name="Active Open" fill="#1F3A5F" radius={[4, 4, 0, 0]} isAnimationActive={!reduced} />
+                    <Bar dataKey="overdue" name="Breached SLA" fill="#B42318" radius={[4, 4, 0, 0]} isAnimationActive={!reduced} />
+                    <Bar dataKey="closed" name="Disposed" fill="#067647" radius={[4, 4, 0, 0]} isAnimationActive={!reduced} />
+                  </BarChart>
+                ) : (
+                  <BarChart data={ageing} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#F0EEE9" />
+                    <XAxis dataKey="bucket" stroke="#5B6068" fontSize={11} tickLine={false} /><YAxis stroke="#5B6068" fontSize={11} tickLine={false} />
+                    <Tooltip contentStyle={TOOLTIP_STYLE} />
+                    <Bar dataKey="n" name="Open cases" radius={[4, 4, 0, 0]} isAnimationActive={!reduced}>{ageing.map((row, index) => <Cell key={row.bucket} fill={BUCKET_COLORS[index % BUCKET_COLORS.length]} />)}</Bar>
+                  </BarChart>
+                )}
               </ResponsiveContainer>
-            )}
-
-            {activeDeckTab === 'region' && (
-              <div className="grid grid-cols-1 md:grid-cols-12 h-full items-center">
-                <div className="md:col-span-6 h-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={byRegion}
-                        dataKey="open"
-                        nameKey="region"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={75}
-                        innerRadius={40}
-                        paddingAngle={3}
-                      >
-                        {byRegion.map((_, i) => (
-                          <Cell key={i} fill={CATEGORICAL_COLORS[i % CATEGORICAL_COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip contentStyle={TOOLTIP_STYLE} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="md:col-span-6 grid grid-cols-2 gap-2 text-xs font-mono p-4 bg-[#FAF9F6] rounded-lg border border-[#DAD6CC]">
-                  {byRegion.map((r, i) => (
-                    <div key={r.region} className="flex items-center justify-between p-2 rounded bg-white border border-[#DAD6CC]">
-                      <div className="flex items-center gap-1.5 truncate">
-                        <span
-                          className="w-2.5 h-2.5 rounded-full shrink-0"
-                          style={{ backgroundColor: CATEGORICAL_COLORS[i % CATEGORICAL_COLORS.length] }}
-                        />
-                        <span className="font-semibold text-[#1B1F24]">{r.region}</span>
-                      </div>
-                      <span className="text-[#1F3A5F] font-bold">{r.open} active</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {activeDeckTab === 'ageing' && (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={ageing} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#F0EEE9" />
-                  <XAxis dataKey="bucket" stroke="#5B6068" fontSize={11} tickLine={false} />
-                  <YAxis stroke="#5B6068" fontSize={11} tickLine={false} />
-                  <Tooltip contentStyle={TOOLTIP_STYLE} />
-                  <Bar dataKey="count" name="Grievance Age" fill="#8A4B08" radius={[4, 4, 0, 0]}>
-                    {ageing.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={BUCKET_COLORS[index % BUCKET_COLORS.length]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-        ) : (
-          /* Table View Alternative */
-          <div className="overflow-x-auto border border-[#DAD6CC] rounded-lg">
-            <table className="w-full text-left text-xs font-mono">
-              <thead className="bg-[#FAF9F6] border-b border-[#DAD6CC] text-[#5B6068]">
-                <tr>
-                  <th className="p-3">Entity Identifier</th>
-                  <th className="p-3 text-right">Active Open Cases</th>
-                  <th className="p-3 text-right">Breached SLA</th>
-                  <th className="p-3 text-right">Disposed Total</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#DAD6CC]">
-                {byBureau.map((b) => (
-                  <tr key={b.bureau} className="hover:bg-[#FAF9F6]">
-                    <td className="p-3 font-semibold text-[#1B1F24]">{b.bureau} Desk</td>
-                    <td className="p-3 text-right font-bold text-[#1F3A5F]">{b.open}</td>
-                    <td className="p-3 text-right font-bold text-[#B42318]">{b.overdue}</td>
-                    <td className="p-3 text-right text-[#067647]">{b.closed}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+            </div>
+          )}
+        </motion.div>
       </div>
-
-      {/* 6. LIVE STATUTORY AUDIT STREAM (SOVEREIGN LEDGER TAPE) */}
-      <div className="bg-[#14233A] rounded-xl p-4 text-[#E8EDF3] font-mono text-xs border border-[#14233A] shadow-sm space-y-2">
-        <div className="flex items-center justify-between border-b border-white/10 pb-2 text-[11px] text-[#A9B6C6]">
-          <span className="flex items-center gap-1.5 text-white font-semibold">
-            <Database size={13} className="text-[#81C784]" />
-            SOVEREIGN STATUTORY AUDIT LEDGER · STREAM TAPE
-          </span>
-          <span className="text-[#81C784]">● RECORD LOCK ARMED</span>
-        </div>
-        <div className="space-y-1 text-[11px] text-[#A9B6C6]">
-          <p className="truncate">
-            <span className="text-[#81C784] font-bold">&gt; [12:04:18] OVERLAP_DETECTION:</span> Evaluated Case #RB-2026-089 against Case #PGRC-2026-142 (Score: 91.4% HIGH)
-          </p>
-          <p className="truncate">
-            <span className="text-[#FFB74D] font-bold">&gt; [12:02:40] LOCAL_EMBEDDING:</span> paraphrase-multilingual-MiniLM-L12 ONNX CPU vector ingestion verified (0ms external egress)
-          </p>
-          <p className="truncate">
-            <span className="text-[#E8EDF3] font-bold">&gt; [12:00:15] PERIMETER_AUDIT:</span> Air-gap policy verified. Complainant PII masked under DARPG Section 4.2
-          </p>
-        </div>
-      </div>
+      <TelemetryTape />
 
     </div>
+    </LayoutGroup></MotionConfig>
   )
 }

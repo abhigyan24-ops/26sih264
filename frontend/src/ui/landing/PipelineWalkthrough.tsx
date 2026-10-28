@@ -130,20 +130,21 @@ export default function PipelineWalkthrough() {
 
   return (
     <section
+      id="pipeline"
       ref={sectionRef}
       aria-label="Eight-step complaint lifecycle pipeline"
-      className="py-24 relative overflow-hidden"
+      className="py-14 sm:py-24 relative overflow-hidden"
       style={{ background: '#FFFFFF', borderTop: '1px solid #DAD6CC' }}
     >
-      <div className="max-w-7xl mx-auto px-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: prefersReduced ? 0 : 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.35, ease: 'easeOut' }}
-          className="max-w-3xl mb-14"
+          className="max-w-3xl mb-10 sm:mb-14"
         >
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
             <span
               className="text-xs font-mono uppercase tracking-widest text-[#1F3A5F] font-semibold"
               style={{ fontFamily: '"IBM Plex Mono", monospace' }}
@@ -155,18 +156,18 @@ export default function PipelineWalkthrough() {
             </span>
           </div>
           <h2
-            className="text-3xl sm:text-4xl font-semibold tracking-tight text-[#1F3A5F]"
+            className="text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight text-[#1F3A5F]"
             style={{ fontFamily: '"IBM Plex Sans", sans-serif' }}
           >
             From intake to coordinated disposal in eight verifiable steps.
           </h2>
-          <p className="text-base text-[#5B6068] mt-2">
+          <p className="text-sm sm:text-base text-[#5B6068] mt-2">
             Click any step to inspect how CaseNexus orchestrates institution resolution, CPU-bound multilingual matching, and human-in-the-loop decision recording.
           </p>
         </motion.div>
 
         {/* Horizontal Step Selector Bar */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 mb-6 sm:mb-8">
           {PIPELINE_STEPS.map((s, idx) => {
             const isSelected = activeIdx === idx
             const StepIcon = s.icon
@@ -174,9 +175,9 @@ export default function PipelineWalkthrough() {
               <button
                 key={s.step}
                 onClick={() => setActiveIdx(idx)}
-                className={`flex flex-col items-start p-3 rounded-lg border text-left transition-all duration-150 cursor-pointer ${
+                className={`flex flex-col items-start p-2.5 sm:p-3 rounded-lg border text-left transition-all duration-150 cursor-pointer ${
                   isSelected
-                    ? 'bg-[#1F3A5F] text-white border-[#1F3A5F] shadow-sm ring-2 ring-[#1F3A5F]/20'
+                    ? 'bg-[#1F3A5F] text-white border-[#1F3A5F] shadow-xs ring-2 ring-[#1F3A5F]/20'
                     : 'bg-[#FAF9F6] border-[#DAD6CC] text-[#5B6068] hover:bg-[#F6F5F1] hover:text-[#1B1F24]'
                 }`}
               >
@@ -186,7 +187,7 @@ export default function PipelineWalkthrough() {
                   </span>
                   <StepIcon size={14} className={isSelected ? 'text-white' : 'text-[#5B6068]'} />
                 </div>
-                <span className="text-xs font-semibold leading-snug truncate w-full">
+                <span className="text-[11px] sm:text-xs font-semibold leading-tight line-clamp-1 truncate w-full">
                   {s.short}
                 </span>
               </button>
@@ -195,7 +196,7 @@ export default function PipelineWalkthrough() {
         </div>
 
         {/* Detailed Interactive Inspector Card */}
-        <div className="rounded-xl border border-[#DAD6CC] bg-[#FAF9F6] p-6 sm:p-8 shadow-xs">
+        <div className="rounded-xl border border-[#DAD6CC] bg-[#FAF9F6] p-4 sm:p-6 lg:p-8 shadow-2xs">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeStep.step}
@@ -203,38 +204,38 @@ export default function PipelineWalkthrough() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -10 }}
               transition={{ duration: 0.2 }}
-              className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start"
+              className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start"
             >
               {/* Left Detail Description (7 cols) */}
-              <div className="lg:col-span-7 space-y-4">
+              <div className="lg:col-span-7 space-y-3.5 sm:space-y-4">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-lg bg-[#1F3A5F] text-white">
+                  <div className="p-2 rounded-lg bg-[#1F3A5F] text-white shrink-0">
                     <Icon size={20} />
                   </div>
                   <div>
-                    <span className="text-[11px] font-mono text-[#8A4B08] font-bold">
+                    <span className="text-[10px] sm:text-[11px] font-mono text-[#8A4B08] font-bold block">
                       STAGE {activeStep.step} OF 08 · {activeStep.bureau}
                     </span>
-                    <h3 className="text-xl font-semibold text-[#1F3A5F]">
+                    <h3 className="text-lg sm:text-xl font-semibold text-[#1F3A5F]">
                       {activeStep.title}
                     </h3>
                   </div>
                 </div>
 
-                <p className="text-sm leading-relaxed text-[#1B1F24]">
+                <p className="text-xs sm:text-sm leading-relaxed text-[#1B1F24]">
                   {activeStep.description}
                 </p>
 
-                <div className="pt-2 flex items-center gap-3">
-                  <span className="inline-flex items-center gap-1.5 text-xs font-mono font-medium text-[#067647] bg-[#E6F4EC] px-3 py-1 rounded border border-[#A8E2C2]">
-                    <CheckCircle2 size={13} />
-                    {activeStep.detail.highlight}
+                <div className="pt-1 flex items-center gap-3">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-mono font-medium text-[#067647] bg-[#E6F4EC] px-2.5 py-1 rounded border border-[#A8E2C2]">
+                    <CheckCircle2 size={13} className="shrink-0" />
+                    <span>{activeStep.detail.highlight}</span>
                   </span>
                 </div>
               </div>
 
               {/* Right Technical I/O Box (5 cols) */}
-              <div className="lg:col-span-5 bg-white rounded-lg border border-[#DAD6CC] p-4.5 space-y-3 font-mono text-xs">
+              <div className="lg:col-span-5 bg-white rounded-lg border border-[#DAD6CC] p-3.5 sm:p-4.5 space-y-3 font-mono text-xs">
                 <div className="flex items-center justify-between pb-2 border-b border-[#DAD6CC]">
                   <span className="text-[#5B6068] text-[11px]">System Contract & Execution</span>
                   <span className="text-[#175CD3] text-[10px] bg-[#E8F0FE] px-1.5 py-0.2 rounded font-semibold">
@@ -244,14 +245,14 @@ export default function PipelineWalkthrough() {
 
                 <div className="space-y-1">
                   <span className="text-[10px] text-[#8A4B08] uppercase font-bold tracking-wider block">Input Payload:</span>
-                  <p className="text-[#1B1F24] bg-[#F6F5F1] p-2 rounded border border-[#DAD6CC] leading-relaxed">
+                  <p className="text-[#1B1F24] bg-[#F6F5F1] p-2 rounded border border-[#DAD6CC] leading-relaxed break-words text-[11px] sm:text-xs">
                     {activeStep.detail.input}
                   </p>
                 </div>
 
                 <div className="space-y-1">
                   <span className="text-[10px] text-[#067647] uppercase font-bold tracking-wider block">Engine Output:</span>
-                  <p className="text-[#1B1F24] bg-[#E6F4EC]/40 p-2 rounded border border-[#A8E2C2] leading-relaxed">
+                  <p className="text-[#1B1F24] bg-[#E6F4EC]/40 p-2 rounded border border-[#A8E2C2] leading-relaxed break-words text-[11px] sm:text-xs">
                     {activeStep.detail.output}
                   </p>
                 </div>
@@ -260,21 +261,21 @@ export default function PipelineWalkthrough() {
           </AnimatePresence>
 
           {/* Stepper Navigation Controls */}
-          <div className="mt-8 pt-4 border-t border-[#DAD6CC] flex items-center justify-between text-xs font-mono">
+          <div className="mt-6 sm:mt-8 pt-4 border-t border-[#DAD6CC] flex items-center justify-between text-xs font-mono">
             <button
               onClick={() => setActiveIdx((prev) => (prev > 0 ? prev - 1 : PIPELINE_STEPS.length - 1))}
-              className="text-[#5B6068] hover:text-[#1F3A5F] px-3 py-1 rounded hover:bg-[#EFEDE7] transition-colors"
+              className="text-[#5B6068] hover:text-[#1F3A5F] px-2.5 py-1.5 rounded hover:bg-[#EFEDE7] transition-colors cursor-pointer"
             >
-              ← Previous Step
+              ← Prev
             </button>
             <span className="text-[#8C8A82]">
-              Showing {activeStep.step} of 08
+              {activeStep.step} / 08
             </span>
             <button
               onClick={() => setActiveIdx((prev) => (prev < PIPELINE_STEPS.length - 1 ? prev + 1 : 0))}
-              className="text-[#1F3A5F] font-semibold hover:underline flex items-center gap-1"
+              className="text-[#1F3A5F] font-semibold hover:underline flex items-center gap-1 px-2.5 py-1.5 rounded hover:bg-[#EFEDE7] transition-colors cursor-pointer"
             >
-              Next Step <ChevronRight size={13} />
+              Next <ChevronRight size={13} />
             </button>
           </div>
         </div>

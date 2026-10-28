@@ -49,32 +49,33 @@ export default function DifferentiatorCards() {
 
   return (
     <section
+      id="differentiators"
       aria-label="What makes CaseNexus different"
-      className="py-24"
+      className="py-14 sm:py-24"
       style={{ background: '#F6F5F1', borderTop: '1px solid #DAD6CC' }}
     >
-      <div className="max-w-7xl mx-auto px-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {/* Header */}
         <motion.div
           ref={headerRef}
           initial={{ opacity: 0, y: prefersReduced ? 0 : 24 }}
           animate={headerInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.32, ease: 'easeOut' }}
-          className="mb-12"
+          className="mb-8 sm:mb-12"
         >
           <span
-            className="text-xs font-mono uppercase tracking-widest mb-3 block"
+            className="text-xs font-mono uppercase tracking-widest mb-2.5 block"
             style={{ color: '#8A4B08', fontFamily: '"IBM Plex Mono", monospace' }}
           >
             Engineering Rigor
           </span>
           <h2
-            className="text-3xl font-semibold leading-tight mb-3"
+            className="text-2xl sm:text-3xl font-semibold leading-tight mb-3"
             style={{ color: '#1F3A5F', fontFamily: '"IBM Plex Sans", sans-serif' }}
           >
             Beyond a plain dashboard.
           </h2>
-          <p className="text-base max-w-2xl" style={{ color: '#5B6068' }}>
+          <p className="text-sm sm:text-base max-w-2xl text-[#5B6068]">
             Seven design decisions that separate CaseNexus from a generic case list.
           </p>
         </motion.div>
@@ -82,7 +83,7 @@ export default function DifferentiatorCards() {
         {/* 3-column card grid with Spotlight Cards */}
         <div
           ref={gridRef}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4"
         >
           {DIFFERENTIATORS.map((item, i) => (
             <motion.div
@@ -94,7 +95,7 @@ export default function DifferentiatorCards() {
             >
               <SpotlightCard
                 spotlightColor="rgba(31, 58, 95, 0.08)"
-                className="h-full p-6 flex flex-col justify-between relative overflow-hidden"
+                className="h-full p-4 sm:p-6 flex flex-col justify-between relative overflow-hidden"
               >
                 {/* Large faded background number */}
                 <span

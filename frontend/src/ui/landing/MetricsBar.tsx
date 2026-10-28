@@ -36,32 +36,33 @@ export default function MetricsBar() {
 
   return (
     <section
+      id="metrics"
       ref={ref}
       aria-label="Verified prototype metrics and governance impact"
-      className="py-20 relative overflow-hidden"
+      className="py-14 sm:py-20 relative overflow-hidden"
       style={{ background: '#1F3A5F' }}
     >
-      <div className="max-w-7xl mx-auto px-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {/* Section label */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={inView ? { opacity: 1 } : {}}
           transition={{ duration: 0.28, ease: 'easeOut' }}
-          className="text-center mb-12 space-y-1.5"
+          className="text-center mb-8 sm:mb-12 space-y-1.5"
         >
           <span
             className="text-xs font-mono uppercase tracking-widest text-[#FFD180] font-semibold block"
             style={{ fontFamily: '"IBM Plex Mono", monospace' }}
           >
-            Empirical Benchmark & National Scale
+            Empirical Benchmark &amp; National Scale
           </span>
-          <p className="text-sm text-[#A9B6C6]">
+          <p className="text-xs sm:text-sm text-[#A9B6C6] max-w-xl mx-auto">
             Benchmarked against AICTE case parameters and official Lok Sabha grievance statistics
           </p>
         </motion.div>
 
         {/* Metrics Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
           {METRICS.map((metric, i) => {
             const Icon = metric.icon
             return (
@@ -70,32 +71,34 @@ export default function MetricsBar() {
                 initial={{ opacity: 0, y: prefersReduced ? 0 : 16 }}
                 animate={inView ? { opacity: 1, y: 0 } : {}}
                 transition={{ duration: 0.3, ease: 'easeOut', delay: i * 0.08 }}
-                className="flex flex-col p-6 rounded-xl border border-white/10 bg-white/5 backdrop-blur-xs"
+                className="flex flex-col p-4 sm:p-6 rounded-xl border border-white/10 bg-white/5 backdrop-blur-xs justify-between"
               >
-                <div className="flex items-center justify-between mb-4">
-                  <span
-                    className="font-mono font-bold leading-none text-white text-3xl sm:text-4xl"
-                    style={{
-                      fontFamily: '"IBM Plex Mono", monospace',
-                      letterSpacing: '-0.02em',
-                    }}
-                  >
-                    {metric.value}
-                  </span>
-                  <div className="p-2 rounded-lg bg-white/10 text-[#FFD180]">
-                    <Icon size={18} />
+                <div>
+                  <div className="flex items-center justify-between mb-3 sm:mb-4">
+                    <span
+                      className="font-mono font-bold leading-none text-white text-2xl sm:text-3xl lg:text-4xl"
+                      style={{
+                        fontFamily: '"IBM Plex Mono", monospace',
+                        letterSpacing: '-0.02em',
+                      }}
+                    >
+                      {metric.value}
+                    </span>
+                    <div className="p-1.5 sm:p-2 rounded-lg bg-white/10 text-[#FFD180] shrink-0">
+                      <Icon size={16} />
+                    </div>
                   </div>
+
+                  <span
+                    className="text-xs sm:text-sm font-semibold text-[#E8EDF3] block mb-1"
+                    style={{ fontFamily: '"IBM Plex Sans", sans-serif' }}
+                  >
+                    {metric.label}
+                  </span>
                 </div>
 
                 <span
-                  className="text-sm font-semibold text-[#E8EDF3] mb-1"
-                  style={{ fontFamily: '"IBM Plex Sans", sans-serif' }}
-                >
-                  {metric.label}
-                </span>
-
-                <span
-                  className="text-xs leading-relaxed text-[#A9B6C6]"
+                  className="text-[11px] sm:text-xs leading-relaxed text-[#A9B6C6] mt-1"
                   style={{ fontFamily: '"IBM Plex Sans", sans-serif' }}
                 >
                   {metric.sub}

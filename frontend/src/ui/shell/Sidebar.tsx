@@ -1,6 +1,6 @@
 import type { ElementType } from 'react'
 import { NavLink } from 'react-router-dom'
-import { Shield, Menu, X, LogOut } from 'lucide-react'
+import { Menu, X, LogOut } from 'lucide-react'
 import { cn } from '../utils'
 
 export interface NavItem {
@@ -51,7 +51,7 @@ export function Sidebar({
       <div className="flex items-center justify-between px-3.5 h-12 border-b border-[#1F3A5F]/60">
         <div className="flex items-center gap-2.5 overflow-hidden">
           <div className="w-7 h-7 rounded-[4px] bg-[#1F3A5F] border border-[#2A4D7C] flex items-center justify-center shrink-0 shadow-sm">
-            <Shield className="w-4 h-4 text-[#E8EDF3]" />
+            <img src="/favicon.svg" alt="CaseNexus" className="w-5 h-5 rounded-[2px]" />
           </div>
           {open && (
             <div className="leading-tight truncate">

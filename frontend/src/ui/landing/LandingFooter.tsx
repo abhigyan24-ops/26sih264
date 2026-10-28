@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import { motion, useInView, useReducedMotion } from 'motion/react'
-import { Shield, Award } from 'lucide-react'
+import { Award } from 'lucide-react'
 
 export default function LandingFooter() {
   const ref = useRef(null)
@@ -19,17 +19,16 @@ export default function LandingFooter() {
         transition={{ duration: 0.32, ease: 'easeOut' }}
       >
         {/* Main footer body */}
-        <div className="max-w-7xl mx-auto px-6 py-16">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10">
             {/* Left: identity */}
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2.5">
-                <div
-                  className="w-8 h-8 rounded flex items-center justify-center flex-shrink-0"
-                  style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)' }}
-                >
-                  <Shield size={16} style={{ color: '#E8EDF3' }} />
-                </div>
+                <img
+                  src="/favicon.svg"
+                  alt="CaseNexus Logo"
+                  className="w-8 h-8 rounded-lg flex-shrink-0 border border-white/20 shadow-xs"
+                />
                 <span
                   className="text-base font-semibold"
                   style={{ color: '#E8EDF3', fontFamily: '"IBM Plex Sans", sans-serif' }}
@@ -77,7 +76,7 @@ export default function LandingFooter() {
             {/* Right: authority */}
             <div className="flex flex-col items-start md:items-end justify-center gap-2">
               <p
-                className="text-sm text-right leading-relaxed"
+                className="text-sm text-left md:text-right leading-relaxed"
                 style={{ color: '#E8EDF3', fontFamily: '"IBM Plex Sans", sans-serif' }}
               >
                 All India Council for Technical Education (AICTE)
@@ -85,7 +84,7 @@ export default function LandingFooter() {
                 <span style={{ color: '#A9B6C6' }}>Ministry of Education, Government of India</span>
               </p>
               <p
-                className="text-xs text-right font-mono text-[#8C8A82]"
+                className="text-xs text-left md:text-right font-mono text-[#8C8A82]"
                 style={{ fontFamily: '"IBM Plex Mono", monospace' }}
               >
                 Designed for Regulation Bureau (RB), PGRC &amp; Regional Offices
@@ -96,7 +95,7 @@ export default function LandingFooter() {
 
         {/* Bottom strip */}
         <div
-          className="px-6 py-4"
+          className="px-4 sm:px-6 py-4"
           style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}
         >
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">

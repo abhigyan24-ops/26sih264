@@ -18,53 +18,53 @@ export default function TechStack() {
 
   return (
     <section
+      id="tech-stack"
       aria-label="Technology stack"
-      className="py-24"
+      className="py-14 sm:py-24"
       style={{ background: '#FFFFFF', borderTop: '1px solid #DAD6CC' }}
     >
-      <div className="max-w-7xl mx-auto px-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {/* Header */}
         <motion.div
           ref={headerRef}
           initial={{ opacity: 0, y: prefersReduced ? 0 : 24 }}
           animate={headerInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.32, ease: 'easeOut' }}
-          className="mb-12"
+          className="mb-8 sm:mb-12"
         >
           <span
-            className="text-xs font-mono uppercase tracking-widest mb-3 block"
+            className="text-xs font-mono uppercase tracking-widest mb-2.5 block"
             style={{ color: '#5B6068', fontFamily: '"IBM Plex Mono", monospace' }}
           >
             Architecture
           </span>
           <h2
-            className="text-3xl font-semibold leading-tight mb-3"
+            className="text-2xl sm:text-3xl font-semibold leading-tight mb-3"
             style={{ color: '#1F3A5F', fontFamily: '"IBM Plex Sans", sans-serif' }}
           >
             Built on open standards, runs anywhere.
           </h2>
-          <p className="text-base max-w-2xl" style={{ color: '#5B6068' }}>
+          <p className="text-sm sm:text-base max-w-2xl text-[#5B6068]">
             No proprietary lock-in. Deployable in an AICTE data centre, a government cloud, or a
             single server.
           </p>
         </motion.div>
 
         {/* Stack rows */}
-        <div ref={ref} className="flex flex-col divide-y" style={{ borderColor: '#DAD6CC', border: '1px solid #DAD6CC', borderRadius: 6, overflow: 'hidden' }}>
+        <div ref={ref} className="flex flex-col divide-y" style={{ borderColor: '#DAD6CC', border: '1px solid #DAD6CC', borderRadius: 8, overflow: 'hidden' }}>
           {LAYERS.map((layer, i) => (
             <motion.div
               key={layer.label}
               initial={{ opacity: 0, x: prefersReduced ? 0 : -16 }}
               animate={inView ? { opacity: 1, x: 0 } : {}}
               transition={{ duration: 0.28, ease: 'easeOut', delay: i * 0.07 }}
-              className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 px-6 py-4"
+              className="flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-6 px-4 sm:px-6 py-3.5 sm:py-4"
               style={{ background: i % 2 === 0 ? '#FFFFFF' : '#F6F5F1' }}
             >
               {/* Layer label */}
               <span
-                className="text-xs font-mono shrink-0"
+                className="text-xs font-mono font-bold sm:font-normal shrink-0 text-[#1F3A5F] sm:text-[#5B6068]"
                 style={{
-                  color: '#5B6068',
                   minWidth: 88,
                   fontFamily: '"IBM Plex Mono", monospace',
                 }}
@@ -78,11 +78,11 @@ export default function TechStack() {
                 aria-hidden="true"
               />
               {/* Tool pills */}
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5 sm:gap-2">
                 {layer.tools.map(tool => (
                   <span
                     key={tool}
-                    className="text-xs font-mono px-2.5 py-1 rounded"
+                    className="text-[11px] sm:text-xs font-mono px-2 sm:px-2.5 py-0.5 sm:py-1 rounded"
                     style={{
                       background: '#EFEDE7',
                       border: '1px solid #DAD6CC',

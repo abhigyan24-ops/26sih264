@@ -61,31 +61,32 @@ export default function ProblemStrip() {
 
   return (
     <section
+      id="problem"
       aria-label="The problem CaseNexus solves"
       style={{
         background: '#FFFFFF',
         borderTop: '1px solid #DAD6CC',
         borderBottom: '1px solid #DAD6CC',
       }}
-      className="py-20"
+      className="py-14 sm:py-20"
     >
-      <div className="max-w-7xl mx-auto px-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {/* Section header */}
         <RevealSection>
-          <div className="mb-12">
+          <div className="mb-10 sm:mb-12">
             <span
-              className="text-xs font-mono uppercase tracking-widest mb-3 block"
+              className="text-xs font-mono uppercase tracking-widest mb-2.5 block"
               style={{ color: '#9A4A00', fontFamily: '"IBM Plex Mono", monospace' }}
             >
               The Root Cause
             </span>
             <h2
-              className="text-3xl font-semibold leading-tight mb-3"
+              className="text-2xl sm:text-3xl font-semibold leading-tight mb-3"
               style={{ color: '#1F3A5F', fontFamily: '"IBM Plex Sans", sans-serif' }}
             >
               Several units. One institution. No shared view.
             </h2>
-            <p className="text-base max-w-2xl" style={{ color: '#5B6068' }}>
+            <p className="text-sm sm:text-base max-w-2xl text-[#5B6068]">
               AICTE's Regulation Bureau, Public Grievance Redressal Cell, and Regional Offices
               each maintain their own records. When multiple units handle the same institution,
               coordination breaks down.
@@ -96,7 +97,7 @@ export default function ProblemStrip() {
         {/* Consequence cards with Spotlight */}
         <div
           ref={sectionRef}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4"
         >
           {CONSEQUENCES.map(({ icon: Icon, title, description }, i) => (
             <motion.div
@@ -108,7 +109,7 @@ export default function ProblemStrip() {
               <SpotlightCard
                 spotlightColor="rgba(180, 35, 24, 0.09)"
                 borderColor="#F8B7B2"
-                className="h-full p-5 flex flex-col justify-between"
+                className="h-full p-4 sm:p-5 flex flex-col justify-between"
               >
                 <div className="space-y-3">
                   <div className="w-8 h-8 rounded-lg bg-[#FDECEA] flex items-center justify-center text-[#B42318]">

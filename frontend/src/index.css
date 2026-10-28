@@ -214,3 +214,22 @@
     @apply bg-blue-600/15 text-blue-300 border border-blue-500/30;
   }
 }
+
+
+/* Continuous Sovereign Telemetry Marquee */
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  display: inline-flex;
+  animation: marquee 32s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee {
+    animation: none;
+    overflow-x: auto;
+  }
+}
